@@ -8,11 +8,11 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "auth", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
-public class Auth {
+@Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
+public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private Long authId;
+    private Long userId;
 
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required")
@@ -35,4 +35,5 @@ public class Auth {
     @Column(nullable = true)
     private String mobile;
     private Boolean mfa;
+    private String type;
 }
