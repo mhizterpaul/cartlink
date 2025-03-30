@@ -33,3 +33,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### SUBLIME TEXT ###
+sociocart.sublime*
+
+
