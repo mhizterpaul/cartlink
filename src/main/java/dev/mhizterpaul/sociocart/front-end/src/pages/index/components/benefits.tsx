@@ -1,14 +1,6 @@
 import {styled} from "@mui/material/styles"
 import EastRoundedIcon from '@mui/icons-material/EastRounded';
-
-const Line = styled('span')({
-  color: 'darkslategray',
-  backgroundColor: 'aliceblue',
-  padding: 8,
-  borderRadius: 4,
-  width: 4,
-  hight: 0.5,
-});
+import Line from "common/Line"
 
 
 export default function(){

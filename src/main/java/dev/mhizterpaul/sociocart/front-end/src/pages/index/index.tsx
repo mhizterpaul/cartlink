@@ -19,7 +19,8 @@ const theme = createTheme({
     MuiStack: {
       defaultProps: {
         useFlexGap: true,
-        direction:"row"
+        direction:"row",
+        spacing: 2,
         sx:{{ flexWrap: 'wrap' }}
       },
     },
