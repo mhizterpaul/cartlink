@@ -1,9 +1,9 @@
 import shop4 from "../original-store4.jpg"
 
 export default function CallToAction(){
-	return ({
+	return (
 		<Box>
-			<Stack gap>
+			<Stack>
 				<Typography>Best Feature</Typography>
 				<Typography>Build your own taste of beauty</Typography>
 				<Typography>we launch CURIOUS ME for you to build your own identity</Typography>
@@ -18,5 +18,5 @@ export default function CallToAction(){
 				<Typography>Build your unique and Beauty Story</Typography/>
 			</Stack>
 		</Box>
-	})
+	)
 }
