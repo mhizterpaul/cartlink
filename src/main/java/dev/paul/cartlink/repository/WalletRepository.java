@@ -1,0 +1,9 @@
+package dev.paul.cartlink.repository;
+
+import dev.paul.cartlink.model.Wallet;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface WalletRepository extends JpaRepository<Wallet, Long> {
+} 
