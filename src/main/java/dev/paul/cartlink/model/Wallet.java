@@ -16,6 +16,7 @@ import lombok.AllArgsConstructor;
 public class Wallet {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Column(name = "wallet_id")
     private Long walletId;
 
     private Double balance;
