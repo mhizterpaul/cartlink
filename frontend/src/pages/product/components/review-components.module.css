@@ -1,0 +1,272 @@
+.background {
+    background: #f5f8ff;
+    min-height: 100vh;
+    padding: 32px 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.container {
+    display: flex;
+    gap: 32px;
+    max-width: 1100px;
+    width: 100%;
+    justify-content: center;
+}
+
+.summaryCard {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 2px 16px rgba(0, 32, 128, 0.06);
+    padding: 32px 32px 24px 32px;
+    min-width: 380px;
+    max-width: 400px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.backBtn {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    background: #f5f8ff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    color: #002080;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.summaryHeader {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    margin-top: 8px;
+}
+
+.ratingRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.mainRating {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #002080;
+}
+
+.stars {
+    font-size: 2rem;
+    color: #00c48c;
+    display: flex;
+    align-items: center;
+}
+
+.star {
+    color: #00c48c;
+    margin-right: 2px;
+}
+
+.starHalf {
+    color: #00c48c;
+    opacity: 0.5;
+    margin-right: 2px;
+}
+
+.starEmpty {
+    color: #e0e0e0;
+    margin-right: 2px;
+}
+
+.ratingCount {
+    color: #7a869a;
+    font-size: 1rem;
+    margin-bottom: 24px;
+}
+
+.subRatings {
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.subRatingRow {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.subRatingLabel {
+    flex: 1 1 120px;
+    color: #002080;
+    font-size: 1rem;
+}
+
+.subRatingBarWrapper {
+    flex: 2 1 160px;
+    position: relative;
+    height: 8px;
+    margin: 0 12px;
+    background: none;
+}
+
+.subRatingBarBg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    z-index: 0;
+}
+
+.subRatingBar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 8px;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.subRatingValue {
+    font-size: 1rem;
+    color: #002080;
+    min-width: 32px;
+    text-align: right;
+}
+
+.showSummaryBtn {
+    background: none;
+    border: none;
+    color: #002080;
+    font-weight: 500;
+    font-size: 1rem;
+    margin-top: 8px;
+    cursor: pointer;
+    align-self: flex-start;
+}
+
+.reviewsSection {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 2px 16px rgba(0, 32, 128, 0.06);
+    padding: 32px 32px 24px 32px;
+    min-width: 420px;
+    max-width: 500px;
+    flex: 1 1 420px;
+}
+
+.reviewsHeaderRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.reviewsHeader {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #002080;
+}
+
+.reviewCount {
+    color: #7a869a;
+    font-weight: 400;
+    font-size: 1rem;
+    margin-left: 4px;
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+}
+
+.filterSelect {
+    background: #f5f8ff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 1rem;
+    color: #002080;
+}
+
+.reviewList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.reviewCard {
+    background: #f5f8ff;
+    border-radius: 16px;
+    padding: 20px 20px 12px 20px;
+    box-shadow: 0 1px 4px rgba(0, 32, 128, 0.04);
+    margin-bottom: 0;
+}
+
+.reviewHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.reviewName {
+    font-weight: 600;
+    color: #002080;
+    font-size: 1rem;
+}
+
+.reviewDate {
+    color: #7a869a;
+    font-size: 0.95rem;
+}
+
+.reviewStars {
+    font-size: 1.1rem;
+    color: #00c48c;
+    margin-bottom: 4px;
+}
+
+.reviewTitle {
+    font-weight: 600;
+    color: #002080;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+}
+
+.reviewText {
+    color: #222;
+    font-size: 1rem;
+    margin-bottom: 8px;
+}
+
+.responseCard {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-top: 8px;
+    box-shadow: 0 1px 4px rgba(0, 32, 128, 0.04);
+}
+
+.responseDate {
+    color: #7a869a;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.responseText {
+    color: #002080;
+    font-size: 1rem;
+}

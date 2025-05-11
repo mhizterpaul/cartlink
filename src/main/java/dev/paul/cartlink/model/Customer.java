@@ -29,9 +29,6 @@ public class Customer implements UserDetails {
     private String email;
 
     @Column(nullable = false)
-    private String password;
-
-    @Column(nullable = false)
     private String firstName;
 
     @Column(nullable = false)
@@ -56,16 +53,6 @@ public class Customer implements UserDetails {
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL)
     private Cart cart;
 
-    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-    public void setPassword(String password) {
-        this.password = passwordEncoder.encode(password);
-    }
-
-    public boolean matchesPassword(String rawPassword) {
-        return passwordEncoder.matches(rawPassword, this.password);
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
@@ -74,11 +61,6 @@ public class Customer implements UserDetails {
     @Override
     public String getUsername() {
         return email;
-    }
-
-    @Override
-    public String getPassword() {
-        return password;
     }
 
     @Override
@@ -101,6 +83,3 @@ public class Customer implements UserDetails {
         return true;
     }
 }
-
-
-

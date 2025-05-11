@@ -27,10 +27,7 @@ public class User {
     @NotBlank(message = "Password is required")
     @Column(nullable = false)
     private String password;
-    @Pattern(
-            regexp = "^\\+[1-9][0-9]{0,2}[0-9]{4,13}$",
-            message = "Mobile number must start with '+', followed by a 1 to 3-digit country code, and a 4 to 13-digit subscriber number, with a total length of at most 15 digits"
-    )
+    @Pattern(regexp = "^\\+[1-9][0-9]{0,2}[0-9]{4,13}$", message = "Mobile number must start with '+', followed by a 1 to 3-digit country code, and a 4 to 13-digit subscriber number, with a total length of at most 15 digits")
     @Size(max = 15, message = "Mobile number must not exceed 15 digits in total (E.164 standard)")
     @Column(nullable = true)
     private String mobile;
@@ -38,7 +35,6 @@ public class User {
     private String firstName;
     private String lastName;
     @NotBlank(message = "Account type is required")
-    private String type;
 
     private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
