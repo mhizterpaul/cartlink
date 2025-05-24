@@ -6,9 +6,46 @@ import {
     TextField,
     Typography,
     Divider,
+    Alert,
 } from '@mui/material';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router';
+import { merchantLogin } from '../../slices/merchantSlice';
+import { type AppDispatch } from '../../store';
+
+const validationSchema = Yup.object({
+    email: Yup.string()
+        .email('Invalid email format')
+        .required('Email is required'),
+    password: Yup.string()
+        .required('Password is required')
+        .min(6, 'Password must be at least 6 characters'),
+});
 
 const SignInPage: React.FC = () => {
+    const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
+
+    const formik = useFormik({
+        initialValues: {
+            email: '',
+            password: '',
+        },
+        validationSchema,
+        onSubmit: async (values, { setSubmitting, setStatus }) => {
+            try {
+                await dispatch(merchantLogin(values)).unwrap();
+                navigate('/dashboard');
+            } catch (error: any) {
+                setStatus(error.message || 'Failed to sign in');
+            } finally {
+                setSubmitting(false);
+            }
+        },
+    });
+
     return (
         <Box
             sx={{
@@ -140,19 +177,38 @@ const SignInPage: React.FC = () => {
                         <Typography variant="body2" sx={{ color: '#888', mb: 3 }}>
                             You need to have registered and verified as merchant, before you can proceed.
                         </Typography>
-                        <Box component="form" sx={{ width: '100%' }}>
+                        {formik.status && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                {formik.status}
+                            </Alert>
+                        )}
+                        <Box component="form" onSubmit={formik.handleSubmit} sx={{ width: '100%' }}>
                             <TextField
                                 fullWidth
-                                label="Username"
+                                id="email"
+                                name="email"
+                                label="Email"
                                 variant="outlined"
+                                value={formik.values.email}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                error={formik.touched.email && Boolean(formik.errors.email)}
+                                helperText={formik.touched.email && formik.errors.email}
                                 sx={{ mb: 2, background: '#fafbfc' }}
                                 InputProps={{ style: { borderRadius: 10 } }}
                             />
                             <TextField
                                 fullWidth
+                                id="password"
+                                name="password"
                                 label="Password"
                                 type="password"
                                 variant="outlined"
+                                value={formik.values.password}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                error={formik.touched.password && Boolean(formik.errors.password)}
+                                helperText={formik.touched.password && formik.errors.password}
                                 sx={{ mb: 3, background: '#fafbfc' }}
                                 InputProps={{ style: { borderRadius: 10 } }}
                             />
@@ -160,6 +216,7 @@ const SignInPage: React.FC = () => {
                                 type="submit"
                                 fullWidth
                                 variant="contained"
+                                disabled={formik.isSubmitting}
                                 sx={{
                                     background: 'linear-gradient(90deg, #e08a2e 0%, #e08a2e 100%)',
                                     color: '#fff',
@@ -174,7 +231,7 @@ const SignInPage: React.FC = () => {
                                     },
                                 }}
                             >
-                                Sign In
+                                {formik.isSubmitting ? 'Signing In...' : 'Sign In'}
                             </Button>
                         </Box>
                     </Box>

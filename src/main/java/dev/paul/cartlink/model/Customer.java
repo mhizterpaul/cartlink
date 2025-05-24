@@ -1,6 +1,8 @@
 package dev.paul.cartlink.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
@@ -8,7 +10,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,15 +26,20 @@ public class Customer implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long customerId;
 
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
     @Column(nullable = false, unique = true)
     private String email;
 
+    @NotBlank(message = "First name is required")
     @Column(nullable = false)
     private String firstName;
 
+    @NotBlank(message = "Last name is required")
     @Column(nullable = false)
     private String lastName;
 
+    @NotBlank(message = "Phone number is required")
     @Column(nullable = false)
     private String phoneNumber;
 
@@ -61,6 +67,13 @@ public class Customer implements UserDetails {
     @Override
     public String getUsername() {
         return email;
+    }    @NotBlank(message = "Password is required")
+    @Column(nullable = false)
+    private String password;
+    
+    @Override
+    public String getPassword() {
+        return password;
     }
 
     @Override

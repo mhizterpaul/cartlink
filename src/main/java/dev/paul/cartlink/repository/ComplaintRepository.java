@@ -11,5 +11,8 @@ import java.util.List;
 @Repository
 public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByCustomer(Customer customer);
+
     List<Complaint> findByOrder(Order order);
-} 
+
+    List<Complaint> findByOrder_MerchantProduct_Merchant_MerchantId(Long merchantId);
+}

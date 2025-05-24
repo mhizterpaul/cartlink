@@ -13,13 +13,18 @@ export interface DrawerItem {
   text: string;
   icon?: React.ReactNode;
   onClick?: () => void;
+  component?: React.ElementType;
+  name?: string; // e.g. 'inventory', 'orders', etc.
 }
 
 export interface DrawerProps {
   items: DrawerItem[];
   open: boolean;
+  variant: "temporary" | "permanent";
   onClose: () => void;
   children?: React.ReactNode;
+  selected?: string;
+  onSelect?: (name: string) => void;
 }
 
 const StyledDrawer = styled(MuiDrawer)(({ theme }) => ({
@@ -31,7 +36,7 @@ const StyledDrawer = styled(MuiDrawer)(({ theme }) => ({
   },
 }));
 
-export default function NavigationDrawer({ items = [], open, onClose, children }: DrawerProps) {
+export default function NavigationDrawer({ items = [], open, onClose, variant, children, selected, onSelect }: DrawerProps) {
   const theme = useTheme();
 
   const drawerContent = (
@@ -42,7 +47,12 @@ export default function NavigationDrawer({ items = [], open, onClose, children }
         {items?.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
-              onClick={item.onClick}
+              component={item.component || 'div'}
+              onClick={() => {
+                if (onSelect && item.name) onSelect(item.name);
+                if (item.onClick) item.onClick();
+              }}
+              selected={selected === item.name}
               sx={{
                 py: 1.5,
                 '&:hover': {
@@ -76,6 +86,7 @@ export default function NavigationDrawer({ items = [], open, onClose, children }
     <StyledDrawer
       open={open}
       onClose={onClose}
+      variant={variant}
       ModalProps={{
         keepMounted: true, // Better open performance on mobile
       }}

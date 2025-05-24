@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { getCartApi, addToCartApi, removeFromCartApi, updateCartItemQuantityApi } from '../api';
 
 interface CartState {
     cart: any;
@@ -11,8 +11,8 @@ export const getCart = createAsyncThunk<any>(
     'cart/getCart',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/customers/cart');
-            return response.data;
+            const response = await getCartApi();
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -23,7 +23,7 @@ export const addToCart = createAsyncThunk<any, any>(
     'cart/addToCart',
     async (data: any, { rejectWithValue }) => {
         try {
-            const response = await axios.post('/api/customers/cart/items', data);
+            const response = await addToCartApi(data);
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -35,7 +35,7 @@ export const removeFromCart = createAsyncThunk<any, { itemId: string }>(
     'cart/removeFromCart',
     async ({ itemId }, { rejectWithValue }) => {
         try {
-            const response = await axios.delete(`/api/customers/cart/items/${itemId}`);
+            const response = await removeFromCartApi({ itemId });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -47,7 +47,7 @@ export const updateCartItemQuantity = createAsyncThunk<any, { itemId: string, qu
     'cart/updateCartItemQuantity',
     async ({ itemId, quantity }, { rejectWithValue }) => {
         try {
-            const response = await axios.put(`/api/customers/cart/items/${itemId}`, { quantity });
+            const response = await updateCartItemQuantityApi({ itemId, quantity });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);

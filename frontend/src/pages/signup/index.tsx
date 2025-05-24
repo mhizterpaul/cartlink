@@ -11,8 +11,14 @@ import {
     IconButton,
     FormControlLabel,
     Checkbox,
+    CircularProgress,
+    Alert,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { useDispatch, useSelector } from 'react-redux';
+import { type AppDispatch, type RootState } from '../../store';
+import { merchantSignUp } from '../../slices/merchantSlice';
+import { useNavigate } from 'react-router';
 
 const SignupForm: React.FC = () => {
     const [formData, setFormData] = useState({
@@ -27,6 +33,10 @@ const SignupForm: React.FC = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
+    const { loading, error, merchant } = useSelector((state: RootState) => state.merchant);
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};
@@ -65,11 +75,21 @@ const SignupForm: React.FC = () => {
         }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
-            // Handle form submission
-            console.log(formData);
+            const result = await dispatch(merchantSignUp({
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                password: formData.password,
+                phoneNumber: formData.mobile,
+                mfa: formData.mfa,
+            }));
+
+            if (merchantSignUp.fulfilled.match(result)) {
+                navigate('/dashboard');
+            }
         }
     };
 
@@ -84,8 +104,11 @@ const SignupForm: React.FC = () => {
                     }}
                 >
                     <Typography component="h1" variant="h4" sx={{ mb: 3, fontWeight: 'bold' }}>
-                        Create Account
+                        Create Merchant Account
                     </Typography>
+
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{typeof error === 'string' ? error : JSON.stringify(error)}</Alert>}
+                    {merchant && <Alert severity="success" sx={{ mb: 2 }}>Signup successful!</Alert>}
 
                     <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
                         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -217,8 +240,9 @@ const SignupForm: React.FC = () => {
                                     backgroundColor: '#1565c0',
                                 },
                             }}
+                            disabled={loading}
                         >
-                            Sign Up
+                            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign Up'}
                         </Button>
 
                         <Box sx={{ textAlign: 'center' }}>

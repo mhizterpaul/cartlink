@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { addProductApi, updateProductApi, deleteProductApi, getProductsApi, searchProductsApi, getInStockProductsApi } from '../api';
 
 interface ProductState {
     products: any;
@@ -12,7 +12,7 @@ export const addProduct = createAsyncThunk<any, any>(
     'product/addProduct',
     async (data, { rejectWithValue }) => {
         try {
-            const response = await axios.post('/api/merchants/products', data);
+            const response = await addProductApi(data);
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -24,7 +24,7 @@ export const updateProduct = createAsyncThunk<any, { productId: string; data: an
     'product/updateProduct',
     async ({ productId, data }, { rejectWithValue }) => {
         try {
-            const response = await axios.put(`/api/merchants/products/${productId}`, data);
+            const response = await updateProductApi({ productId, ...data });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -36,7 +36,7 @@ export const deleteProduct = createAsyncThunk<any, string>(
     'product/deleteProduct',
     async (productId, { rejectWithValue }) => {
         try {
-            const response = await axios.delete(`/api/merchants/products/${productId}`);
+            const response = await deleteProductApi(productId);
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -48,8 +48,8 @@ export const getProducts = createAsyncThunk<any>(
     'product/getProducts',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/merchants/products');
-            return response.data;
+            const response = await getProductsApi();
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -60,8 +60,8 @@ export const searchProducts = createAsyncThunk<any, string>(
     'product/searchProducts',
     async (query, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/merchants/products/search', { params: { query } });
-            return response.data;
+            const response = await searchProductsApi(query);
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -72,8 +72,8 @@ export const getInStockProducts = createAsyncThunk<any>(
     'product/getInStockProducts',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/merchants/products/in-stock');
-            return response.data;
+            const response = await getInStockProductsApi();
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }

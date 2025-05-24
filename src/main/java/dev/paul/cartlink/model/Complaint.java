@@ -1,14 +1,12 @@
 package dev.paul.cartlink.model;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -49,4 +47,4 @@ public class Complaint {
         createdAt = LocalDateTime.now();
         status = ComplaintStatus.PENDING;
     }
-} 
+}

@@ -11,6 +11,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -25,22 +30,51 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/merchants/signup", "/api/merchants/login").permitAll()
-                .requestMatchers("/api/merchants/password-reset-request").permitAll()
-                .requestMatchers("/api/merchants/password-reset").permitAll()
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(new JwtAuthenticationFilter(securityService),
-                           UsernamePasswordAuthenticationFilter.class);
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
+                        .requestMatchers("/api/customers/signup").permitAll() // Only signup is public
+                        .requestMatchers("/api/merchants/signup", "/api/merchants/login").permitAll()
+                        .requestMatchers("/api/merchants/password-reset-request").permitAll()
+                        .requestMatchers("/api/merchants/password-reset").permitAll()
+                        .requestMatchers("/error").permitAll()
+                        // Protected endpoints (require JWT)
+                        .requestMatchers("/api/customers/**").authenticated() // All other customer endpoints require
+                                                                              // auth
+                        .requestMatchers("/api/merchants/**").authenticated()
+                        .anyRequest().authenticated())
+                .addFilterBefore(new JwtAuthenticationFilter(securityService),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173")); // Frontend origin
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // 1 hour
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-} 
+}

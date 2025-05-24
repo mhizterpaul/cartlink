@@ -1,29 +1,27 @@
 package dev.paul.cartlink.model;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "merchant", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public class Merchant implements UserDetails {
     @Id
-    @GeneratedValue(strategy=GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long merchantId;
 
     @Email(message = "Invalid email format")
@@ -35,12 +33,18 @@ public class Merchant implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @NotBlank(message = "First name is required")
+    @Column(nullable = false)
     private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    @Column(nullable = false)
     private String lastName;
+
     private String middleName;
     private String image;
     private String phoneNumber;
-    
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "wallet_id", referencedColumnName = "wallet_id", nullable = false, unique = true)
     private Wallet wallet;
@@ -50,16 +54,6 @@ public class Merchant implements UserDetails {
 
     @OneToMany(mappedBy = "merchant", cascade = CascadeType.ALL)
     private List<Review> reviews;
-
-    private static final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-    public void setPassword(String password) {
-        this.password = passwordEncoder.encode(password);
-    }
-
-    public boolean matchesPassword(String rawPassword) {
-        return passwordEncoder.matches(rawPassword, this.password);
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -96,6 +90,3 @@ public class Merchant implements UserDetails {
         return true;
     }
 }
-
-
-

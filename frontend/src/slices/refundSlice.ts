@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { requestRefundApi, getCustomerRefundsApi, getOrderRefundsApi } from '../api';
 
 interface RefundState {
     refunds: any;
@@ -11,7 +11,7 @@ export const requestRefund = createAsyncThunk<any, { orderId: string; data: any 
     'refund/requestRefund',
     async ({ orderId, data }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`/api/customers/orders/${orderId}/refund`, data);
+            const response = await requestRefundApi({ orderId, ...data });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -23,8 +23,8 @@ export const getCustomerRefunds = createAsyncThunk<any>(
     'refund/getCustomerRefunds',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/customers/orders/refunds');
-            return response.data;
+            const response = await getCustomerRefundsApi();
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -35,8 +35,8 @@ export const getOrderRefunds = createAsyncThunk<any, string>(
     'refund/getOrderRefunds',
     async (orderId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/customers/orders/${orderId}/refunds`);
-            return response.data;
+            const response = await getOrderRefundsApi(orderId);
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }

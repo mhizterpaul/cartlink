@@ -20,7 +20,7 @@ import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import PeopleIcon from '@mui/icons-material/People';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import NavigationDrawer from '../../components/drawer';
+import NavigationDrawer from '../dashboard/components/drawer';
 
 const navigationItems = [
   { text: 'Stores', icon: <StorefrontIcon /> },

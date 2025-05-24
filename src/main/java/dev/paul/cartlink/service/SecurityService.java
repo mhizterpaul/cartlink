@@ -1,17 +1,18 @@
 package dev.paul.cartlink.service;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import dev.paul.cartlink.dto.SignUpRequest;
+import dev.paul.cartlink.dto.Type;
 import dev.paul.cartlink.model.Customer;
 import dev.paul.cartlink.model.Merchant;
+import dev.paul.cartlink.model.Wallet;
 import dev.paul.cartlink.repository.CustomerRepository;
 import dev.paul.cartlink.repository.MerchantRepository;
+import dev.paul.cartlink.repository.WalletRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -39,19 +40,25 @@ public class SecurityService implements UserDetailsService {
 
     private final MerchantRepository merchantRepository;
     private final CustomerRepository customerRepository;
+    private final WalletRepository walletRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
     public SecurityService(MerchantRepository merchantRepository,
-                           CustomerRepository customerRepository,
-                           PasswordEncoder passwordEncoder) throws Exception {
+            CustomerRepository customerRepository,
+            WalletRepository walletRepository,
+            PasswordEncoder passwordEncoder,
+            TokenBlacklistService tokenBlacklistService) throws Exception {
         this.merchantRepository = merchantRepository;
         this.customerRepository = customerRepository;
+        this.walletRepository = walletRepository;
         this.passwordEncoder = passwordEncoder;
+        this.tokenBlacklistService = tokenBlacklistService;
 
         // Generate RSA key pair
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -79,22 +86,14 @@ public class SecurityService implements UserDetailsService {
         // Try to find merchant first
         Merchant merchant = merchantRepository.findByEmail(email).orElse(null);
         if (merchant != null) {
-            return org.springframework.security.core.userdetails.User.builder()
-                    .username(merchant.getEmail())
-                    .password(merchant.getPassword())
-                    .roles("MERCHANT")
-                    .build();
+            return merchant;
         }
 
         // If not found as merchant, try to find as customer
         Customer customer = customerRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(customer.getEmail())
-                .password(customer.getPassword())
-                .roles("CUSTOMER")
-                .build();
+        return customer;
     }
 
     public String generateToken(UserDetails userDetails) {
@@ -111,6 +110,9 @@ public class SecurityService implements UserDetailsService {
 
     public boolean validateToken(String token) {
         try {
+            if (tokenBlacklistService.isBlacklisted(token)) {
+                return false;
+            }
             jwtDecoder.decode(token);
             return true;
         } catch (JwtException e) {
@@ -131,22 +133,40 @@ public class SecurityService implements UserDetailsService {
             throw new IllegalArgumentException("Email already exists");
         }
 
-        if ("MERCHANT".equalsIgnoreCase(signUpRequest.getType())) {
+        if (Type.MERCHANT.equals(signUpRequest.getType())) {
             Merchant merchant = new Merchant();
             merchant.setEmail(email);
             merchant.setPassword(passwordEncoder.encode(password));
             merchant.setFirstName(signUpRequest.getFirstName());
             merchant.setLastName(signUpRequest.getLastName());
             merchant.setPhoneNumber(signUpRequest.getMobile());
+
+            // Create a wallet for the merchant
+            Wallet wallet = new Wallet();
+            wallet.setBalance(0.0); // Set default balance
+            wallet = walletRepository.save(wallet);
+            merchant.setWallet(wallet);
+
             return merchantRepository.save(merchant);
-        } else {
+        } else if (Type.CUSTOMER.equals(signUpRequest.getType())) {
             Customer customer = new Customer();
             customer.setEmail(email);
-            customer.setPassword(passwordEncoder.encode(password));
             customer.setFirstName(signUpRequest.getFirstName());
             customer.setLastName(signUpRequest.getLastName());
             customer.setPhoneNumber(signUpRequest.getMobile());
             return customerRepository.save(customer);
+        } else {
+            throw new IllegalArgumentException("Invalid user type. Must be either 'MERCHANT' or 'CUSTOMER'");
+        }
+    }
+
+    public void invalidateToken(String token) {
+        try {
+            var decodedJwt = jwtDecoder.decode(token);
+            long expirationTime = decodedJwt.getExpiresAt().toEpochMilli();
+            tokenBlacklistService.blacklistToken(token, expirationTime);
+        } catch (JwtException e) {
+            // Token is already invalid, no need to blacklist
         }
     }
 }

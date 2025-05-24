@@ -6,7 +6,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.Builder;
 
+@Data
+@Builder
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,5 +23,5 @@ public class LoginRequest {
     @NotBlank(message = "Password is required")
     private String password;
 
-    private String userType; // "USER" or "MERCHANT"
-} 
+    private String type; // "USER" or "MERCHANT"
+}

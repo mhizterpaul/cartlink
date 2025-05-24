@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { generateProductLinkApi, getProductLinksApi, getLinkAnalyticsApi, getTrafficSourcesApi } from '../api';
 
 interface ProductLinkState {
     productLinks: any;
@@ -13,7 +13,7 @@ export const generateProductLink = createAsyncThunk<any, { productId: string }>(
     'productLink/generateProductLink',
     async ({ productId }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`/api/merchants/products/${productId}/generate-link`);
+            const response = await generateProductLinkApi({ productId });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -25,8 +25,8 @@ export const getProductLinks = createAsyncThunk<any>(
     'productLink/getProductLinks',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/merchants/products/links');
-            return response.data;
+            const response = await getProductLinksApi();
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -37,8 +37,8 @@ export const getLinkAnalytics = createAsyncThunk<any, { linkId: string; startDat
     'productLink/getLinkAnalytics',
     async ({ linkId, startDate, endDate }, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/merchants/products/links/${linkId}/analytics`, { params: { startDate, endDate } });
-            return response.data;
+            const response = await getLinkAnalyticsApi({ linkId, startDate, endDate });
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -49,8 +49,8 @@ export const getTrafficSources = createAsyncThunk<any, string>(
     'productLink/getTrafficSources',
     async (linkId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/merchants/products/links/${linkId}/traffic`);
-            return response.data;
+            const response = await getTrafficSourcesApi(linkId);
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }

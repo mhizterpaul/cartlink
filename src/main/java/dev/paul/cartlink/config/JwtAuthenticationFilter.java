@@ -1,6 +1,7 @@
 package dev.paul.cartlink.config;
 
 import dev.paul.cartlink.service.SecurityService;
+import org.springframework.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,19 +14,34 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final SecurityService securityService;
+    private final List<String> publicEndpoints = Arrays.asList(
+            "/api/customers/signup",
+            "/api/merchants/signup",
+            "/api/merchants/login",
+            "/api/merchants/password-reset-request",
+            "/api/merchants/password-reset",
+            "/error");
 
     public JwtAuthenticationFilter(SecurityService securityService) {
         this.securityService = securityService;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                  FilterChain filterChain) throws ServletException, IOException {
+    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return publicEndpoints.stream().anyMatch(path::startsWith);
+    }
+
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
@@ -50,4 +66,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         filterChain.doFilter(request, response);
     }
-} 
+}

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { getOrdersApi, updateOrderStatusApi, updateOrderTrackingApi, getOrdersByLinkApi } from '../api';
 
 interface OrderState {
     orders: any;
@@ -11,8 +11,8 @@ export const getOrders = createAsyncThunk<any, any>(
     'order/getOrders',
     async (params, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/merchants/orders', { params });
-            return response.data;
+            const response = await getOrdersApi(params);
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -23,7 +23,7 @@ export const updateOrderStatus = createAsyncThunk<any, { orderId: string; status
     'order/updateOrderStatus',
     async ({ orderId, status }, { rejectWithValue }) => {
         try {
-            const response = await axios.put(`/api/merchants/orders/${orderId}/status`, { status });
+            const response = await updateOrderStatusApi({ orderId, status });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -35,7 +35,7 @@ export const updateOrderTracking = createAsyncThunk<any, { orderId: string; trac
     'order/updateOrderTracking',
     async ({ orderId, trackingId }, { rejectWithValue }) => {
         try {
-            const response = await axios.put(`/api/merchants/orders/${orderId}/tracking`, { trackingId });
+            const response = await updateOrderTrackingApi({ orderId, trackingId });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -47,8 +47,8 @@ export const getOrdersByLink = createAsyncThunk<any, string>(
     'order/getOrdersByLink',
     async (linkId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/merchants/orders/link/${linkId}`);
-            return response.data;
+            const response = await getOrdersByLinkApi(linkId);
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }

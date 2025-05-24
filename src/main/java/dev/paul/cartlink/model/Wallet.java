@@ -2,13 +2,12 @@ package dev.paul.cartlink.model;
 
 import dev.paul.cartlink.converter.PayoutScheduleConverter;
 import jakarta.persistence.*;
+import lombok.Data;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity

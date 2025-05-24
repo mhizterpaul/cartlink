@@ -1,5 +1,5 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { submitComplaintApi, getCustomerComplaintsApi, getOrderComplaintsApi } from '../api';
 
 interface ComplaintState {
     complaints: any;
@@ -11,7 +11,7 @@ export const submitComplaint = createAsyncThunk<any, { orderId: string; data: an
     'complaint/submitComplaint',
     async ({ orderId, data }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`/api/customers/orders/${orderId}/complaint`, data);
+            const response = await submitComplaintApi({ orderId, ...data });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -23,8 +23,8 @@ export const getCustomerComplaints = createAsyncThunk<any>(
     'complaint/getCustomerComplaints',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get('/api/customers/orders/complaints');
-            return response.data;
+            const response = await getCustomerComplaintsApi();
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
@@ -35,8 +35,8 @@ export const getOrderComplaints = createAsyncThunk<any, string>(
     'complaint/getOrderComplaints',
     async (orderId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`/api/customers/orders/${orderId}/complaints`);
-            return response.data;
+            const response = await getOrderComplaintsApi(orderId);
+            return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }

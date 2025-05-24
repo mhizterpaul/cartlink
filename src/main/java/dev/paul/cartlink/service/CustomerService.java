@@ -2,26 +2,18 @@ package dev.paul.cartlink.service;
 
 import dev.paul.cartlink.model.Customer;
 import dev.paul.cartlink.repository.CustomerRepository;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
 
 @Service
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final SecurityService securityService;
 
-    public CustomerService(CustomerRepository customerRepository,
-            PasswordEncoder passwordEncoder,
-            SecurityService securityService) {
+    public CustomerService(CustomerRepository customerRepository) {
         this.customerRepository = customerRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.securityService = securityService;
+
     }
 
     @Transactional
