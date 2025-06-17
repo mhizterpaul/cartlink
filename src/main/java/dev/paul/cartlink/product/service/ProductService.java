@@ -1,18 +1,17 @@
 package dev.paul.cartlink.product.service;
 
-import dev.paul.cartlink.merchant.dto.MerchantProduct;
-import dev.paul.cartlink.merchant.model.Merchant;
-import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
-import dev.paul.cartlink.model.*;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
-
+import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.dto.MerchantProduct;
+import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class ProductService {
 
     private final ProductRepository productRepository;
@@ -24,7 +23,6 @@ public class ProductService {
         this.merchantProductRepository = merchantProductRepository;
     }
 
-    @Transactional
     public MerchantProduct addProduct(Merchant merchant, Product product, Integer stock, Double price,
             Double discount, String logisticsProvider) {
         Product savedProduct = productRepository.save(product);
@@ -40,7 +38,6 @@ public class ProductService {
         return merchantProductRepository.save(merchantProduct);
     }
 
-    @Transactional
     public MerchantProduct updateProduct(Long merchantProductId, Product product, Integer stock,
             Double price, Double discount, String logisticsProvider) {
         MerchantProduct merchantProduct = merchantProductRepository.findById(merchantProductId)
@@ -61,7 +58,6 @@ public class ProductService {
         return merchantProductRepository.save(merchantProduct);
     }
 
-    @Transactional
     public void deleteProduct(Long merchantProductId) {
         MerchantProduct merchantProduct = merchantProductRepository.findById(merchantProductId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));

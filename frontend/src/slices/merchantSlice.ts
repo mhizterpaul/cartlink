@@ -1,30 +1,25 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { merchantSignUpApi, merchantLoginApi, merchantPasswordResetRequestApi, merchantPasswordResetApi, merchantRefreshTokenApi } from '../api';
+import { auth } from '../api';
 
 interface MerchantState {
-    merchant: any;
+    merchant: any | null;
     token: string | null;
     loading: boolean;
-    error: any;
+    error: string | null;
 }
 
-export const merchantSignUp = createAsyncThunk<any, any>(
-    'merchant/signUp',
-    async (data: any, { rejectWithValue }) => {
-        try {
-            const response = await merchantSignUpApi(data);
-            return response.data;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data || err.message);
-        }
-    }
-);
+const initialState: MerchantState = {
+    merchant: null,
+    token: localStorage.getItem('token'),
+    loading: false,
+    error: null
+};
 
-export const merchantLogin = createAsyncThunk<any, any>(
+export const loginMerchant = createAsyncThunk(
     'merchant/login',
     async (data: any, { rejectWithValue }) => {
         try {
-            const response = await merchantLoginApi(data);
+            const response = await auth.merchant.login(data);
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -32,53 +27,53 @@ export const merchantLogin = createAsyncThunk<any, any>(
     }
 );
 
-export const merchantRefreshToken = createAsyncThunk<any, void>(
+export const signUpMerchant = createAsyncThunk(
+    'merchant/signup',
+    async (data: any, { rejectWithValue }) => {
+        try {
+            const response = await auth.merchant.signUp(data);
+            return response.data;
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data || err.message);
+        }
+    }
+);
+
+export const requestPasswordReset = createAsyncThunk(
+    'merchant/requestPasswordReset',
+    async (data: any, { rejectWithValue }) => {
+        try {
+            const response = await auth.merchant.passwordResetRequest(data);
+            return response.data;
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data || err.message);
+        }
+    }
+);
+
+export const resetPassword = createAsyncThunk(
+    'merchant/resetPassword',
+    async (data: any, { rejectWithValue }) => {
+        try {
+            const response = await auth.merchant.passwordReset(data);
+            return response.data;
+        } catch (err: any) {
+            return rejectWithValue(err.response?.data || err.message);
+        }
+    }
+);
+
+export const refreshToken = createAsyncThunk(
     'merchant/refreshToken',
-    async (_, { getState, rejectWithValue }) => {
+    async (token: string, { rejectWithValue }) => {
         try {
-            const state = getState() as { merchant: MerchantState };
-            const token = state.merchant.token;
-            if (!token) {
-                return rejectWithValue('No token available');
-            }
-            const response = await merchantRefreshTokenApi(token);
+            const response = await auth.merchant.refreshToken(token);
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
         }
     }
 );
-
-export const merchantPasswordResetRequest = createAsyncThunk<any, any>(
-    'merchant/passwordResetRequest',
-    async (data: any, { rejectWithValue }) => {
-        try {
-            const response = await merchantPasswordResetRequestApi(data);
-            return response.data;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data || err.message);
-        }
-    }
-);
-
-export const merchantPasswordReset = createAsyncThunk<any, any>(
-    'merchant/passwordReset',
-    async (data: any, { rejectWithValue }) => {
-        try {
-            const response = await merchantPasswordResetApi(data);
-            return response.data;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data || err.message);
-        }
-    }
-);
-
-const initialState: MerchantState = {
-    merchant: null,
-    token: null,
-    loading: false,
-    error: null,
-};
 
 const merchantSlice = createSlice({
     name: 'merchant',
@@ -87,55 +82,70 @@ const merchantSlice = createSlice({
         logout: (state) => {
             state.merchant = null;
             state.token = null;
-            state.error = null;
+            localStorage.removeItem('token');
         },
+        clearError: (state) => {
+            state.error = null;
+        }
     },
     extraReducers: (builder) => {
         builder
-            .addCase(merchantSignUp.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(merchantSignUp.fulfilled, (state, action: PayloadAction<any>) => {
-                state.loading = false;
-                state.merchant = action.payload;
-                state.token = action.payload.token;
+            .addCase(loginMerchant.pending, (state) => {
+                state.loading = true;
+                state.error = null;
             })
-            .addCase(merchantSignUp.rejected, (state, action: PayloadAction<any>) => {
-                state.loading = false;
-                state.error = action.payload;
-            })
-            .addCase(merchantLogin.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(merchantLogin.fulfilled, (state, action: PayloadAction<any>) => {
+            .addCase(loginMerchant.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.merchant = action.payload.merchant;
                 state.token = action.payload.token;
                 localStorage.setItem('token', action.payload.token);
             })
-            .addCase(merchantLogin.rejected, (state, action: PayloadAction<any>) => {
+            .addCase(loginMerchant.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-            .addCase(merchantRefreshToken.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(merchantRefreshToken.fulfilled, (state, action: PayloadAction<any>) => {
+            .addCase(signUpMerchant.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(signUpMerchant.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
+                state.merchant = action.payload.merchant;
                 state.token = action.payload.token;
+                localStorage.setItem('token', action.payload.token);
             })
-            .addCase(merchantRefreshToken.rejected, (state, action: PayloadAction<any>) => {
+            .addCase(signUpMerchant.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-            .addCase(merchantPasswordResetRequest.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(merchantPasswordResetRequest.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; })
-            .addCase(merchantPasswordResetRequest.rejected, (state, action: PayloadAction<any>) => {
+            .addCase(requestPasswordReset.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(requestPasswordReset.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(requestPasswordReset.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-            .addCase(merchantPasswordReset.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(merchantPasswordReset.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; })
-            .addCase(merchantPasswordReset.rejected, (state, action: PayloadAction<any>) => {
+            .addCase(resetPassword.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(resetPassword.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(resetPassword.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.error = action.payload;
+            })
+            .addCase(refreshToken.fulfilled, (state, action: PayloadAction<any>) => {
+                state.token = action.payload.token;
+                localStorage.setItem('token', action.payload.token);
             });
-    },
+    }
 });
 
-export const { logout } = merchantSlice.actions;
+export const { logout, clearError } = merchantSlice.actions;
 export default merchantSlice.reducer; 

@@ -12,7 +12,7 @@ import {
     Divider,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import { merchantApi } from '../../services/api';
+import { auth } from '../../api';
 
 const months = [
     "January",
@@ -29,8 +29,18 @@ const months = [
     "December",
 ];
 
+interface MerchantProfile {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber?: string;
+    profileImage?: string;
+    [key: string]: any;
+}
+
 export default function AccountInfo() {
-    const [merchant, setMerchant] = useState<any>(null);
+    const [merchant, setMerchant] = useState<MerchantProfile | null>(null);
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [phone, setPhone] = useState("");
@@ -42,13 +52,15 @@ export default function AccountInfo() {
     useEffect(() => {
         const fetchMerchantProfile = async () => {
             try {
-                const response = await merchantApi.getProfile();
-                const data = response.data;
-                setMerchant(data);
-                setFirstName(data.firstName || '');
-                setLastName(data.lastName || '');
-                setPhone(data.phoneNumber || '');
-                setEmail(data.email || '');
+                const profile = await auth.merchant.getProfile();
+                setMerchant(profile);
+                setFirstName(profile.firstName || '');
+                setLastName(profile.lastName || '');
+                setPhone(profile.phoneNumber || '');
+                setEmail(profile.email || '');
+                if (profile.profileImage) {
+                    setProfileImage(profile.profileImage);
+                }
             } catch (error) {
                 console.error('Error fetching merchant profile:', error);
             }
@@ -69,13 +81,14 @@ export default function AccountInfo() {
 
     const handleSave = async () => {
         try {
-            const updatedMerchant = {
-                ...merchant,
+            const updatedProfile = {
                 firstName,
                 lastName,
                 phoneNumber: phone,
+                profileImage: profileImage as string
             };
-            await merchantApi.updateProfile(updatedMerchant);
+            const response = await auth.merchant.updateProfile(updatedProfile);
+            setMerchant(response.data as MerchantProfile);
             // Show success message or handle response
         } catch (error) {
             console.error('Error updating merchant profile:', error);

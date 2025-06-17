@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
-import dev.paul.cartlink.customer.RefundStatus;
+import dev.paul.cartlink.customer.model.RefundStatus;
 import dev.paul.cartlink.order.model.Order;
 
 @Data

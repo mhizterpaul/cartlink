@@ -17,7 +17,7 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { type AppDispatch, type RootState } from '../../store';
-import { merchantSignUp } from '../../slices/merchantSlice';
+import { signUpMerchant } from '../../slices/merchantSlice';
 import { useNavigate } from 'react-router';
 
 const SignupForm: React.FC = () => {
@@ -78,7 +78,7 @@ const SignupForm: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
-            const result = await dispatch(merchantSignUp({
+            const result = await dispatch(signUpMerchant({
                 firstName: formData.firstName,
                 lastName: formData.lastName,
                 email: formData.email,
@@ -87,7 +87,7 @@ const SignupForm: React.FC = () => {
                 mfa: formData.mfa,
             }));
 
-            if (merchantSignUp.fulfilled.match(result)) {
+            if (signUpMerchant.fulfilled.match(result)) {
                 navigate('/dashboard');
             }
         }

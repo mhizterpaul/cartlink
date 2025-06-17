@@ -12,7 +12,7 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router';
-import { merchantLogin } from '../../slices/merchantSlice';
+import { loginMerchant } from '../../slices/merchantSlice';
 import { type AppDispatch } from '../../store';
 
 const validationSchema = Yup.object({
@@ -36,7 +36,7 @@ const SignInPage: React.FC = () => {
         validationSchema,
         onSubmit: async (values, { setSubmitting, setStatus }) => {
             try {
-                await dispatch(merchantLogin(values)).unwrap();
+                await dispatch(loginMerchant(values)).unwrap();
                 navigate('/dashboard');
             } catch (error: any) {
                 setStatus(error.message || 'Failed to sign in');

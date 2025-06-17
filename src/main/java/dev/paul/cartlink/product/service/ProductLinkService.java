@@ -4,7 +4,7 @@ import dev.paul.cartlink.analytics.model.LinkAnalytics;
 import dev.paul.cartlink.analytics.repository.LinkAnalyticsRepository;
 import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.merchant.model.Merchant;
-import dev.paul.cartlink.model.*;
+import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductLink;
 import dev.paul.cartlink.product.repository.ProductLinkRepository;
 
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@Transactional
 public class ProductLinkService {
 
     private final ProductLinkRepository productLinkRepository;

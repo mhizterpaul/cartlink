@@ -2,19 +2,19 @@ package dev.paul.cartlink.cart.service;
 
 import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.cart.model.CartItem;
-import dev.paul.cartlink.cart.repository.CartItemRepository;
 import dev.paul.cartlink.cart.repository.CartRepository;
-import dev.paul.cartlink.customer.model.Customer;
-import dev.paul.cartlink.model.*;
+import dev.paul.cartlink.cart.repository.CartItemRepository;
+import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductLink;
 import dev.paul.cartlink.product.repository.ProductLinkRepository;
-
+import dev.paul.cartlink.customer.model.Customer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional
 public class CartService {
 
     private final CartRepository cartRepository;
@@ -29,7 +29,6 @@ public class CartService {
         this.productLinkRepository = productLinkRepository;
     }
 
-    @Transactional
     public CartItem addToCart(Customer customer, Long productLinkId, Integer quantity) {
         Cart cart = getOrCreateCart(customer);
         ProductLink productLink = productLinkRepository.findById(productLinkId)
@@ -53,7 +52,6 @@ public class CartService {
         return cartItemRepository.save(newItem);
     }
 
-    @Transactional
     public void removeFromCart(Customer customer, Long itemId) {
         Cart cart = getOrCreateCart(customer);
         CartItem item = cartItemRepository.findById(itemId)
@@ -66,7 +64,6 @@ public class CartService {
         cartItemRepository.delete(item);
     }
 
-    @Transactional
     public CartItem updateCartItemQuantity(Customer customer, Long itemId, Integer quantity) {
         Cart cart = getOrCreateCart(customer);
         CartItem item = cartItemRepository.findById(itemId)
@@ -94,7 +91,6 @@ public class CartService {
                 });
     }
 
-    @Transactional
     public void clearCart(Customer customer) {
         Cart cart = getOrCreateCart(customer);
         List<CartItem> items = cartItemRepository.findByCart(cart);

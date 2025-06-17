@@ -1,17 +1,17 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { requestRefundApi, getCustomerRefundsApi, getOrderRefundsApi } from '../api';
+import { refund } from '../api';
 
 interface RefundState {
     refunds: any;
     loading: boolean;
-    error: any;
+    error: string | null;
 }
 
-export const requestRefund = createAsyncThunk<any, { orderId: string; data: any }>(
+export const requestRefund = createAsyncThunk(
     'refund/requestRefund',
-    async ({ orderId, data }, { rejectWithValue }) => {
+    async ({ orderId, ...data }: { orderId: number;[key: string]: any }, { rejectWithValue }) => {
         try {
-            const response = await requestRefundApi({ orderId, ...data });
+            const response = await refund.request({ orderId, ...data });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -19,11 +19,11 @@ export const requestRefund = createAsyncThunk<any, { orderId: string; data: any 
     }
 );
 
-export const getCustomerRefunds = createAsyncThunk<any>(
+export const getCustomerRefunds = createAsyncThunk(
     'refund/getCustomerRefunds',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getCustomerRefundsApi();
+            const response = await refund.getCustomerRefunds();
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -31,11 +31,11 @@ export const getCustomerRefunds = createAsyncThunk<any>(
     }
 );
 
-export const getOrderRefunds = createAsyncThunk<any, string>(
+export const getOrderRefunds = createAsyncThunk(
     'refund/getOrderRefunds',
-    async (orderId, { rejectWithValue }) => {
+    async (orderId: number, { rejectWithValue }) => {
         try {
-            const response = await getOrderRefundsApi(orderId);
+            const response = await refund.getOrderRefunds(orderId);
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -52,19 +52,50 @@ const initialState: RefundState = {
 const refundSlice = createSlice({
     name: 'refund',
     initialState,
-    reducers: {},
+    reducers: {
+        clearError: (state) => {
+            state.error = null;
+        }
+    },
     extraReducers: (builder) => {
         builder
-            .addCase(requestRefund.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(requestRefund.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; })
-            .addCase(requestRefund.rejected, (state, action: PayloadAction<any>) => { state.loading = false; state.error = action.payload; })
-            .addCase(getCustomerRefunds.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(getCustomerRefunds.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; state.refunds = action.payload; })
-            .addCase(getCustomerRefunds.rejected, (state, action: PayloadAction<any>) => { state.loading = false; state.error = action.payload; })
-            .addCase(getOrderRefunds.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(getOrderRefunds.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; state.refunds = action.payload; })
-            .addCase(getOrderRefunds.rejected, (state, action: PayloadAction<any>) => { state.loading = false; state.error = action.payload; });
+            .addCase(requestRefund.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(requestRefund.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(requestRefund.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(getCustomerRefunds.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getCustomerRefunds.fulfilled, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.refunds = action.payload;
+            })
+            .addCase(getCustomerRefunds.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(getOrderRefunds.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getOrderRefunds.fulfilled, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.refunds = action.payload;
+            })
+            .addCase(getOrderRefunds.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
     },
 });
 
+export const { clearError } = refundSlice.actions;
 export default refundSlice.reducer; 

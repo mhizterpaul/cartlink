@@ -2,10 +2,13 @@ package dev.paul.cartlink.merchant.controller;
 
 import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.customer.model.Review;
-import dev.paul.cartlink.dto.SignUpRequest;
+import dev.paul.cartlink.merchant.dto.SignUpRequest;
+import dev.paul.cartlink.merchant.dto.LoginRequest;
+import dev.paul.cartlink.merchant.dto.AuthResponse;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.service.MerchantService;
 import dev.paul.cartlink.order.model.Order;
+import dev.paul.cartlink.config.SecurityService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

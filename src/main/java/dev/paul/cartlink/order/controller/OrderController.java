@@ -1,7 +1,6 @@
 package dev.paul.cartlink.order.controller;
 
 import dev.paul.cartlink.merchant.model.Merchant;
-import dev.paul.cartlink.model.*;
 import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.service.OrderService;

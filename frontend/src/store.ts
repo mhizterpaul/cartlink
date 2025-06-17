@@ -6,6 +6,7 @@ import complaintReducer from './slices/complaintSlice';
 import orderReducer from './slices/orderSlice';
 import productLinkReducer from './slices/productLinkSlice';
 import productReducer from './slices/productSlice';
+import dashboardReducer from './slices/dashboardSlice';
 
 const store = configureStore({
     reducer: {
@@ -16,6 +17,7 @@ const store = configureStore({
         order: orderReducer,
         productLink: productLinkReducer,
         product: productReducer,
+        dashboard: dashboardReducer,
     },
 });
 

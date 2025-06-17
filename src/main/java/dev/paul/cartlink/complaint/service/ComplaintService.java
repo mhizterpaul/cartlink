@@ -1,9 +1,9 @@
 package dev.paul.cartlink.complaint.service;
 
+import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.complaint.model.ComplaintStatus;
 import dev.paul.cartlink.complaint.repository.ComplaintRepository;
 import dev.paul.cartlink.customer.model.Customer;
-import dev.paul.cartlink.model.*;
 import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.repository.OrderRepository;
 
@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@Transactional
 public class ComplaintService {
 
     private final ComplaintRepository complaintRepository;
@@ -57,15 +58,13 @@ public class ComplaintService {
     }
 
     @Transactional
-    public Complaint updateComplaintStatus(Long complaintId, ComplaintStatus newStatus) {
+    public Complaint updateComplaintStatus(Long complaintId, ComplaintStatus status) {
         Complaint complaint = complaintRepository.findById(complaintId)
-                .orElseThrow(() -> new IllegalArgumentException("Complaint not found"));
-
-        complaint.setStatus(newStatus);
-        if (newStatus == ComplaintStatus.RESOLVED) {
+                .orElseThrow(() -> new RuntimeException("Complaint not found"));
+        complaint.setStatus(status);
+        if (status == ComplaintStatus.RESOLVED) {
             complaint.setResolvedAt(LocalDateTime.now());
         }
-
         return complaintRepository.save(complaint);
     }
 }

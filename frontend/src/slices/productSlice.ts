@@ -1,5 +1,6 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { addProductApi, updateProductApi, deleteProductApi, getProductsApi, searchProductsApi, getInStockProductsApi } from '../api';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { product } from '../api';
 
 interface ProductState {
     products: any;
@@ -12,7 +13,7 @@ export const addProduct = createAsyncThunk<any, any>(
     'product/addProduct',
     async (data, { rejectWithValue }) => {
         try {
-            const response = await addProductApi(data);
+            const response = await product.merchant.add(data);
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -20,11 +21,11 @@ export const addProduct = createAsyncThunk<any, any>(
     }
 );
 
-export const updateProduct = createAsyncThunk<any, { productId: string; data: any }>(
+export const updateProduct = createAsyncThunk<any, { productId: number; data: any }>(
     'product/updateProduct',
     async ({ productId, data }, { rejectWithValue }) => {
         try {
-            const response = await updateProductApi({ productId, ...data });
+            const response = await product.merchant.update({ productId, ...data });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -32,11 +33,11 @@ export const updateProduct = createAsyncThunk<any, { productId: string; data: an
     }
 );
 
-export const deleteProduct = createAsyncThunk<any, string>(
+export const deleteProduct = createAsyncThunk<any, number>(
     'product/deleteProduct',
     async (productId, { rejectWithValue }) => {
         try {
-            const response = await deleteProductApi(productId);
+            const response = await product.merchant.delete(productId);
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -48,7 +49,7 @@ export const getProducts = createAsyncThunk<any>(
     'product/getProducts',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getProductsApi();
+            const response = await product.merchant.getAll();
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -60,7 +61,7 @@ export const searchProducts = createAsyncThunk<any, string>(
     'product/searchProducts',
     async (query, { rejectWithValue }) => {
         try {
-            const response = await searchProductsApi(query);
+            const response = await product.merchant.search(query);
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -72,7 +73,7 @@ export const getInStockProducts = createAsyncThunk<any>(
     'product/getInStockProducts',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getInStockProductsApi();
+            const response = await product.merchant.getInStock();
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);

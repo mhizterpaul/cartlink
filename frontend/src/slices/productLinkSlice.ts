@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { generateProductLinkApi, getProductLinksApi, getLinkAnalyticsApi, getTrafficSourcesApi } from '../api';
+import { productLink } from '../api';
 
 interface ProductLinkState {
     productLinks: any;
@@ -9,11 +9,11 @@ interface ProductLinkState {
     error: any;
 }
 
-export const generateProductLink = createAsyncThunk<any, { productId: string }>(
+export const generateProductLink = createAsyncThunk<any, { productId: number }>(
     'productLink/generateProductLink',
     async ({ productId }, { rejectWithValue }) => {
         try {
-            const response = await generateProductLinkApi({ productId });
+            const response = await productLink.generate({ productId });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -25,7 +25,7 @@ export const getProductLinks = createAsyncThunk<any>(
     'productLink/getProductLinks',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getProductLinksApi();
+            const response = await productLink.getAll();
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -33,11 +33,11 @@ export const getProductLinks = createAsyncThunk<any>(
     }
 );
 
-export const getLinkAnalytics = createAsyncThunk<any, { linkId: string; startDate?: string; endDate?: string }>(
+export const getLinkAnalytics = createAsyncThunk<any, { linkId: number; startDate?: string; endDate?: string }>(
     'productLink/getLinkAnalytics',
     async ({ linkId, startDate, endDate }, { rejectWithValue }) => {
         try {
-            const response = await getLinkAnalyticsApi({ linkId, startDate, endDate });
+            const response = await productLink.getAnalytics({ linkId, startDate, endDate });
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -45,11 +45,11 @@ export const getLinkAnalytics = createAsyncThunk<any, { linkId: string; startDat
     }
 );
 
-export const getTrafficSources = createAsyncThunk<any, string>(
+export const getTrafficSources = createAsyncThunk<any, number>(
     'productLink/getTrafficSources',
     async (linkId, { rejectWithValue }) => {
         try {
-            const response = await getTrafficSourcesApi(linkId);
+            const response = await productLink.getTrafficSources(linkId);
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);

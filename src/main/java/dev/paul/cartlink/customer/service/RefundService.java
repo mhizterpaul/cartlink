@@ -1,11 +1,10 @@
 package dev.paul.cartlink.customer.service;
 
-import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.model.RefundRequest;
 import dev.paul.cartlink.customer.model.RefundStatus;
 import dev.paul.cartlink.customer.repository.RefundRequestRepository;
-import dev.paul.cartlink.model.*;
 import dev.paul.cartlink.order.model.Order;
+import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 

@@ -13,7 +13,7 @@ import {
     Alert,
 } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { merchantApi } from '../../../../services/api';
+import { productLink } from '../../../../api';
 
 interface CreateLinkDialogProps {
     open: boolean;
@@ -30,7 +30,7 @@ export default function CreateLinkDialog({ open, onClose, productId, productName
     const handleCreateLink = async () => {
         try {
             setIsLoading(true);
-            const response = await merchantApi.createProductLink(productId);
+            const response = await productLink.generate({ productId });
             const baseUrl = window.location.origin;
             setGeneratedLink(`${baseUrl}/product/${response.data.linkId}`);
         } catch (error) {

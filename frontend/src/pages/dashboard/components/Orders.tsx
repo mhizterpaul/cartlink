@@ -18,7 +18,7 @@ import {
     Button,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import { merchantApi } from '../../../services/api';
+import { order } from '../../../api';
 
 interface Order {
     orderId: number;
@@ -46,8 +46,8 @@ export default function Orders() {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const response = await merchantApi.getOrders();
-                setOrders(response.data);
+                const response = await order.merchant.getAll();
+                setOrders(response);
             } catch (error) {
                 console.error('Error fetching orders:', error);
             } finally {
@@ -71,8 +71,7 @@ export default function Orders() {
         if (!selectedOrder) return;
 
         try {
-            // TODO: Implement status update API call
-            // await merchantApi.updateOrderStatus(selectedOrder.orderId, newStatus);
+            await order.merchant.updateStatus({ orderId: selectedOrder.orderId, status: newStatus });
 
             // Update local state
             setOrders(orders.map(order =>

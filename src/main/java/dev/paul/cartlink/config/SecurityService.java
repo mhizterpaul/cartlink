@@ -9,8 +9,10 @@ import com.nimbusds.jose.proc.SecurityContext;
 
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.repository.CustomerRepository;
-import dev.paul.cartlink.dto.SignUpRequest;
-import dev.paul.cartlink.dto.Type;
+import dev.paul.cartlink.merchant.dto.SignUpRequest;
+import dev.paul.cartlink.merchant.dto.LoginRequest;
+import dev.paul.cartlink.merchant.dto.AuthResponse;
+import dev.paul.cartlink.merchant.dto.Type;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.model.Wallet;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;

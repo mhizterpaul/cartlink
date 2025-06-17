@@ -1,5 +1,6 @@
 package dev.paul.cartlink.complaint.repository;
 
+import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.order.model.Order;
 

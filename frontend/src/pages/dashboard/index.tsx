@@ -6,14 +6,7 @@ import {
     Card,
     CardContent,
     CardHeader,
-    Avatar,
-    List,
-    ListItem,
-    ListItemText,
-    ListItemAvatar,
-    Divider,
     Button,
-    Chip,
     Grid,
     useTheme,
 } from '@mui/material';
@@ -25,7 +18,7 @@ import Transactions from "./components/Transactions";
 import Wallet from "./components/Wallet";
 import Customers from "./components/Customers";
 import Coupons from "./components/Coupons";
-import { getDashboardStatsApi, getSalesDataApi, getTrafficDataApi } from '../../api';
+import { dashboard } from '../../api';
 
 const COLORS = ['#3366CC', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -60,13 +53,13 @@ function DashboardContent() {
         const fetchData = async () => {
             try {
                 const [statsRes, salesRes, trafficRes] = await Promise.all([
-                    getDashboardStatsApi(),
-                    getSalesDataApi(),
-                    getTrafficDataApi(),
+                    dashboard.getStats(),
+                    dashboard.getSalesData(),
+                    dashboard.getTrafficData(),
                 ]);
-                setStats(statsRes.data);
-                setSalesData(salesRes.data);
-                setTrafficData(trafficRes.data);
+                setStats(statsRes);
+                setSalesData(salesRes);
+                setTrafficData(trafficRes);
             } catch (error) {
                 console.error('Error fetching dashboard data:', error);
             }
@@ -85,7 +78,7 @@ function DashboardContent() {
                     { label: 'Total Sales', value: `$${stats.totalSales.toFixed(2)}` },
                     { label: 'Total Orders', value: stats.totalOrders },
                     { label: 'Total Customers', value: stats.totalCustomers },
-                ].map((stat, i) => (
+                ].map((stat) => (
                     <Grid size={{ xs: 12, sm: 6, md: 3 }} key={stat.label}>
                         <Card elevation={0} sx={{ height: '100%', p: 2, border: '1px solid', borderColor: 'grey.200' }}>
                             <CardContent sx={{ p: 0 }}>

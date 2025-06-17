@@ -3,7 +3,6 @@ package dev.paul.cartlink.product.controller;
 import dev.paul.cartlink.analytics.model.LinkAnalytics;
 import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.merchant.model.Merchant;
-import dev.paul.cartlink.model.*;
 import dev.paul.cartlink.product.model.ProductLink;
 import dev.paul.cartlink.product.service.ProductLinkService;
 import dev.paul.cartlink.product.service.ProductService;

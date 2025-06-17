@@ -37,80 +37,126 @@ api.interceptors.response.use(
     }
 );
 
-// MERCHANT API functions
-export const merchantSignUpApi = (data: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-    middleName?: string;
-    phoneNumber?: string;
-}) => api.post('/merchant/signup', data);
+// Auth API
+export const auth = {
+    merchant: {
+        signUp: (data: {
+            email: string;
+            password: string;
+            firstName: string;
+            lastName: string;
+            middleName?: string;
+            phoneNumber?: string;
+        }) => api.post('/merchant/signup', data),
 
-export const merchantLoginApi = async (data: { email: string; password: string }) => {
-    try {
-        console.log('Attempting login with:', { email: data.email });
-        const response = await api.post('/merchant/login', {
-            email: data.email,
-            password: data.password
-        });
-        console.log('Login response:', response.data);
-        return response.data;
-    } catch (error: any) {
-        console.error('Login error:', error.response?.data || error.message);
-        throw error;
+        login: async (data: { email: string; password: string }) => {
+            try {
+                console.log('Attempting login with:', { email: data.email });
+                const response = await api.post('/merchant/login', {
+                    email: data.email,
+                    password: data.password
+                });
+                console.log('Login response:', response.data);
+                return response.data;
+            } catch (error: any) {
+                console.error('Login error:', error.response?.data || error.message);
+                throw error;
+            }
+        },
+
+        passwordResetRequest: (data: { email: string }) =>
+            api.post('/merchant/password-reset-request', data),
+
+        passwordReset: (data: { email: string; resetToken: string; newPassword: string }) =>
+            api.post('/merchant/password-reset', data),
+
+        refreshToken: (token: string) =>
+            api.post('/merchant/refresh-token', token),
+
+        getProfile: () => api.get('/merchant/profile').then(res => res.data),
+
+        updateProfile: (data: {
+            firstName: string;
+            lastName: string;
+            phoneNumber?: string;
+            [key: string]: any;
+        }) => api.put('/merchant/profile', data)
+    },
+
+    customer: {
+        signUp: (data: any) => api.post('/customer/signup', data)
     }
 };
 
-export const merchantPasswordResetRequestApi = (data: { email: string }) => api.post('/merchant/password-reset-request', data);
-export const merchantPasswordResetApi = (data: { email: string; resetToken: string; newPassword: string }) => api.post('/merchant/password-reset', data);
-export const merchantRefreshTokenApi = (token: string) => api.post('/merchant/refresh-token', token);
+// Order API
+export const order = {
+    merchant: {
+        getAll: (params?: any) => api.get('/merchant/orders', { params }).then(res => res.data),
+        updateStatus: ({ orderId, status }: { orderId: number; status: string }) =>
+            api.put(`/merchant/orders/${orderId}/status`, { status }),
+        updateTracking: ({ orderId, trackingId }: { orderId: number; trackingId: string }) =>
+            api.put(`/merchant/orders/${orderId}/tracking`, { trackingId }),
+        getByLink: (linkId: number) =>
+            api.get(`/merchant/orders/link/${linkId}`).then(res => res.data)
+    },
+    customer: {
+        getCart: () => api.get('/customers/cart').then(res => res.data),
+        addToCart: (data: any) => api.post('/customers/cart/items', data),
+        removeFromCart: ({ itemId }: { itemId: number }) =>
+            api.delete(`/customers/cart/items/${itemId}`),
+        updateQuantity: ({ itemId, quantity }: { itemId: number; quantity: number }) =>
+            api.put(`/customers/cart/items/${itemId}`, { quantity })
+    }
+};
 
-// CUSTOMER API functions
-export const customerSignUpApi = (data: any) => api.post('/customer/signup', data);
+// Product API
+export const product = {
+    merchant: {
+        add: (data: any) => api.post('/merchant/products', data),
+        update: ({ productId, ...data }: { productId: number;[key: string]: any }) =>
+            api.put(`/merchant/products/${productId}`, data),
+        delete: (productId: number) => api.delete(`/merchant/products/${productId}`),
+        getAll: () => api.get('/merchant/products').then(res => res.data),
+        search: (query: string) => api.get('/merchant/products/search', { params: { query } }).then(res => res.data),
+        getInStock: () => api.get('/merchant/products/in-stock').then(res => res.data)
+    }
+};
 
+// Product Link API
+export const productLink = {
+    generate: ({ productId }: { productId: number }) =>
+        api.post(`/merchant/products/${productId}/generate-link`),
+    getAll: () => api.get('/merchant/products/links').then(res => res.data),
+    getAnalytics: ({ linkId, startDate, endDate }: { linkId: number; startDate: string; endDate: string }) =>
+        api.get(`/merchant/products/links/${linkId}/analytics`, { params: { startDate, endDate } }).then(res => res.data),
+    getTrafficSources: (linkId: number) =>
+        api.get(`/merchant/products/links/${linkId}/traffic`).then(res => res.data)
+};
 
+// Complaint API
+export const complaint = {
+    submit: ({ orderId, ...data }: { orderId: number;[key: string]: any }) =>
+        api.post(`/customers/orders/${orderId}/complaint`, data),
+    getCustomerComplaints: () => api.get('/customers/orders/complaints').then(res => res.data),
+    getOrderComplaints: (orderId: number) =>
+        api.get(`/customers/orders/${orderId}/complaints`).then(res => res.data)
+};
 
-// CART API functions
-export const getCartApi = () => api.get('/customers/cart').then(res => res.data);
-export const addToCartApi = (data: any) => api.post('/customers/cart/items', data);
-export const removeFromCartApi = ({ itemId }: any) => api.delete(`/customers/cart/items/${itemId}`);
-export const updateCartItemQuantityApi = ({ itemId, quantity }: any) => api.put(`/customers/cart/items/${itemId}`, { quantity });
+// Refund API
+export const refund = {
+    request: ({ orderId, ...data }: { orderId: number;[key: string]: any }) =>
+        api.post(`/customers/orders/${orderId}/refund`, data),
+    getCustomerRefunds: () => api.get('/customers/orders/refunds').then(res => res.data),
+    getOrderRefunds: (orderId: number) =>
+        api.get(`/customers/orders/${orderId}/refunds`).then(res => res.data)
+};
 
-// REFUND API functions
-export const requestRefundApi = ({ orderId, ...data }: any) => api.post(`/customers/orders/${orderId}/refund`, data);
-export const getCustomerRefundsApi = () => api.get('/customers/orders/refunds').then(res => res.data);
-export const getOrderRefundsApi = (orderId: any) => api.get(`/customers/orders/${orderId}/refunds`).then(res => res.data);
-
-// COMPLAINT API functions
-export const submitComplaintApi = ({ orderId, ...data }: any) => api.post(`/customers/orders/${orderId}/complaint`, data);
-export const getCustomerComplaintsApi = () => api.get('/customers/orders/complaints').then(res => res.data);
-export const getOrderComplaintsApi = (orderId: any) => api.get(`/customers/orders/${orderId}/complaints`).then(res => res.data);
-
-// ORDER (MERCHANT) API functions
-export const getOrdersApi = (params: any) => api.get('/merchant/orders', { params }).then(res => res.data);
-export const updateOrderStatusApi = ({ orderId, status }: any) => api.put(`/merchant/orders/${orderId}/status`, { status });
-export const updateOrderTrackingApi = ({ orderId, trackingId }: any) => api.put(`/merchant/orders/${orderId}/tracking`, { trackingId });
-export const getOrdersByLinkApi = (linkId: any) => api.get(`/merchant/orders/link/${linkId}`).then(res => res.data);
-
-// PRODUCT LINK API functions
-export const generateProductLinkApi = ({ productId }: any) => api.post(`/merchant/products/${productId}/generate-link`);
-export const getProductLinksApi = () => api.get('/merchant/products/links').then(res => res.data);
-export const getLinkAnalyticsApi = ({ linkId, startDate, endDate }: any) => api.get(`/merchant/products/links/${linkId}/analytics`, { params: { startDate, endDate } }).then(res => res.data);
-export const getTrafficSourcesApi = (linkId: any) => api.get(`/merchant/products/links/${linkId}/traffic`).then(res => res.data);
-
-// PRODUCT API functions
-export const addProductApi = (data: any) => api.post('/merchant/products', data);
-export const updateProductApi = ({ productId, ...data }: any) => api.put(`/merchant/products/${productId}`, data);
-export const deleteProductApi = (productId: any) => api.delete(`/merchant/products/${productId}`);
-export const getProductsApi = () => api.get('/merchant/products').then(res => res.data);
-export const searchProductsApi = (query: any) => api.get('/merchant/products/search', { params: { query } }).then(res => res.data);
-export const getInStockProductsApi = () => api.get('/merchant/products/in-stock').then(res => res.data);
-
-// DASHBOARD API functions
-export const getDashboardStatsApi = () => api.get('/merchant/dashboard/stats').then(res => res.data);
-export const getSalesDataApi = () => api.get('/merchant/dashboard/sales-data').then(res => res.data);
-export const getTrafficDataApi = () => api.get('/merchant/dashboard/traffic-data').then(res => res.data);
+// Dashboard API
+export const dashboard = {
+    getStats: () => api.get('/merchant/dashboard/stats').then(res => res.data),
+    getSalesData: () => api.get('/merchant/dashboard/sales-data').then(res => res.data),
+    getTrafficData: () => api.get('/merchant/dashboard/traffic-data').then(res => res.data)
+};
 
 
 

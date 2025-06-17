@@ -1,17 +1,17 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { submitComplaintApi, getCustomerComplaintsApi, getOrderComplaintsApi } from '../api';
+import { complaint } from '../api';
 
 interface ComplaintState {
     complaints: any;
     loading: boolean;
-    error: any;
+    error: string | null;
 }
 
-export const submitComplaint = createAsyncThunk<any, { orderId: string; data: any }>(
+export const submitComplaint = createAsyncThunk(
     'complaint/submitComplaint',
-    async ({ orderId, data }, { rejectWithValue }) => {
+    async ({ orderId, ...data }: { orderId: number;[key: string]: any }, { rejectWithValue }) => {
         try {
-            const response = await submitComplaintApi({ orderId, ...data });
+            const response = await complaint.submit({ orderId, ...data });
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -19,11 +19,11 @@ export const submitComplaint = createAsyncThunk<any, { orderId: string; data: an
     }
 );
 
-export const getCustomerComplaints = createAsyncThunk<any>(
+export const getCustomerComplaints = createAsyncThunk(
     'complaint/getCustomerComplaints',
     async (_, { rejectWithValue }) => {
         try {
-            const response = await getCustomerComplaintsApi();
+            const response = await complaint.getCustomerComplaints();
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -31,11 +31,11 @@ export const getCustomerComplaints = createAsyncThunk<any>(
     }
 );
 
-export const getOrderComplaints = createAsyncThunk<any, string>(
+export const getOrderComplaints = createAsyncThunk(
     'complaint/getOrderComplaints',
-    async (orderId, { rejectWithValue }) => {
+    async (orderId: number, { rejectWithValue }) => {
         try {
-            const response = await getOrderComplaintsApi(orderId);
+            const response = await complaint.getOrderComplaints(orderId);
             return response;
         } catch (err: any) {
             return rejectWithValue(err.response?.data || err.message);
@@ -52,19 +52,50 @@ const initialState: ComplaintState = {
 const complaintSlice = createSlice({
     name: 'complaint',
     initialState,
-    reducers: {},
+    reducers: {
+        clearError: (state) => {
+            state.error = null;
+        }
+    },
     extraReducers: (builder) => {
         builder
-            .addCase(submitComplaint.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(submitComplaint.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; })
-            .addCase(submitComplaint.rejected, (state, action: PayloadAction<any>) => { state.loading = false; state.error = action.payload; })
-            .addCase(getCustomerComplaints.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(getCustomerComplaints.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; state.complaints = action.payload; })
-            .addCase(getCustomerComplaints.rejected, (state, action: PayloadAction<any>) => { state.loading = false; state.error = action.payload; })
-            .addCase(getOrderComplaints.pending, (state) => { state.loading = true; state.error = null; })
-            .addCase(getOrderComplaints.fulfilled, (state, action: PayloadAction<any>) => { state.loading = false; state.complaints = action.payload; })
-            .addCase(getOrderComplaints.rejected, (state, action: PayloadAction<any>) => { state.loading = false; state.error = action.payload; });
+            .addCase(submitComplaint.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(submitComplaint.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(submitComplaint.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(getCustomerComplaints.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getCustomerComplaints.fulfilled, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.complaints = action.payload;
+            })
+            .addCase(getCustomerComplaints.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(getOrderComplaints.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getOrderComplaints.fulfilled, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.complaints = action.payload;
+            })
+            .addCase(getOrderComplaints.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            });
     },
 });
 
+export const { clearError } = complaintSlice.actions;
 export default complaintSlice.reducer; 

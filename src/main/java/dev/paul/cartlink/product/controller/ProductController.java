@@ -1,10 +1,9 @@
 package dev.paul.cartlink.product.controller;
 
-import dev.paul.cartlink.merchant.dto.MerchantProduct;
-import dev.paul.cartlink.merchant.model.Merchant;
-import dev.paul.cartlink.model.*;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.service.ProductService;
+import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.dto.MerchantProduct;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
