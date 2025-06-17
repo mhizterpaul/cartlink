@@ -105,8 +105,9 @@ const merchantSlice = createSlice({
             .addCase(merchantLogin.pending, (state) => { state.loading = true; state.error = null; })
             .addCase(merchantLogin.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
-                state.merchant = action.payload;
+                state.merchant = action.payload.merchant;
                 state.token = action.payload.token;
+                localStorage.setItem('token', action.payload.token);
             })
             .addCase(merchantLogin.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;

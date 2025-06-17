@@ -1,6 +1,5 @@
 package dev.paul.cartlink.config;
 
-import dev.paul.cartlink.service.SecurityService;
 import org.springframework.lang.NonNull;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,10 +22,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final SecurityService securityService;
     private final List<String> publicEndpoints = Arrays.asList(
             "/api/customers/signup",
-            "/api/merchants/signup",
-            "/api/merchants/login",
-            "/api/merchants/password-reset-request",
-            "/api/merchants/password-reset",
+            "/api/merchant/signup",
+            "/api/merchant/login",
+            "/api/merchant/password-reset-request",
+            "/api/merchant/password-reset",
             "/error");
 
     public JwtAuthenticationFilter(SecurityService securityService) {

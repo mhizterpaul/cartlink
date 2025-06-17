@@ -45,12 +45,12 @@ export const merchantSignUpApi = (data: {
     lastName: string;
     middleName?: string;
     phoneNumber?: string;
-}) => api.post('/merchants/signup', data);
+}) => api.post('/merchant/signup', data);
 
 export const merchantLoginApi = async (data: { email: string; password: string }) => {
     try {
         console.log('Attempting login with:', { email: data.email });
-        const response = await api.post('/merchants/login', {
+        const response = await api.post('/merchant/login', {
             email: data.email,
             password: data.password
         });
@@ -62,9 +62,9 @@ export const merchantLoginApi = async (data: { email: string; password: string }
     }
 };
 
-export const merchantPasswordResetRequestApi = (data: { email: string }) => api.post('/merchants/password-reset-request', data);
-export const merchantPasswordResetApi = (data: { email: string; resetToken: string; newPassword: string }) => api.post('/merchants/password-reset', data);
-export const merchantRefreshTokenApi = (token: string) => api.post('/merchants/refresh-token', token);
+export const merchantPasswordResetRequestApi = (data: { email: string }) => api.post('/merchant/password-reset-request', data);
+export const merchantPasswordResetApi = (data: { email: string; resetToken: string; newPassword: string }) => api.post('/merchant/password-reset', data);
+export const merchantRefreshTokenApi = (token: string) => api.post('/merchant/refresh-token', token);
 
 // CUSTOMER API functions
 export const customerSignUpApi = (data: any) => api.post('/customer/signup', data);
@@ -88,22 +88,31 @@ export const getCustomerComplaintsApi = () => api.get('/customers/orders/complai
 export const getOrderComplaintsApi = (orderId: any) => api.get(`/customers/orders/${orderId}/complaints`).then(res => res.data);
 
 // ORDER (MERCHANT) API functions
-export const getOrdersApi = (params: any) => api.get('/merchants/orders', { params }).then(res => res.data);
-export const updateOrderStatusApi = ({ orderId, status }: any) => api.put(`/merchants/orders/${orderId}/status`, { status });
-export const updateOrderTrackingApi = ({ orderId, trackingId }: any) => api.put(`/merchants/orders/${orderId}/tracking`, { trackingId });
-export const getOrdersByLinkApi = (linkId: any) => api.get(`/merchants/orders/link/${linkId}`).then(res => res.data);
+export const getOrdersApi = (params: any) => api.get('/merchant/orders', { params }).then(res => res.data);
+export const updateOrderStatusApi = ({ orderId, status }: any) => api.put(`/merchant/orders/${orderId}/status`, { status });
+export const updateOrderTrackingApi = ({ orderId, trackingId }: any) => api.put(`/merchant/orders/${orderId}/tracking`, { trackingId });
+export const getOrdersByLinkApi = (linkId: any) => api.get(`/merchant/orders/link/${linkId}`).then(res => res.data);
 
 // PRODUCT LINK API functions
-export const generateProductLinkApi = ({ productId }: any) => api.post(`/merchants/products/${productId}/generate-link`);
-export const getProductLinksApi = () => api.get('/merchants/products/links').then(res => res.data);
-export const getLinkAnalyticsApi = ({ linkId, startDate, endDate }: any) => api.get(`/merchants/products/links/${linkId}/analytics`, { params: { startDate, endDate } }).then(res => res.data);
-export const getTrafficSourcesApi = (linkId: any) => api.get(`/merchants/products/links/${linkId}/traffic`).then(res => res.data);
+export const generateProductLinkApi = ({ productId }: any) => api.post(`/merchant/products/${productId}/generate-link`);
+export const getProductLinksApi = () => api.get('/merchant/products/links').then(res => res.data);
+export const getLinkAnalyticsApi = ({ linkId, startDate, endDate }: any) => api.get(`/merchant/products/links/${linkId}/analytics`, { params: { startDate, endDate } }).then(res => res.data);
+export const getTrafficSourcesApi = (linkId: any) => api.get(`/merchant/products/links/${linkId}/traffic`).then(res => res.data);
 
 // PRODUCT API functions
-export const addProductApi = (data: any) => api.post('/merchants/products', data);
-export const updateProductApi = ({ productId, ...data }: any) => api.put(`/merchants/products/${productId}`, data);
-export const deleteProductApi = (productId: any) => api.delete(`/merchants/products/${productId}`);
-export const getProductsApi = () => api.get('/merchants/products').then(res => res.data);
-export const searchProductsApi = (query: any) => api.get('/merchants/products/search', { params: { query } }).then(res => res.data);
-export const getInStockProductsApi = () => api.get('/merchants/products/in-stock').then(res => res.data);
+export const addProductApi = (data: any) => api.post('/merchant/products', data);
+export const updateProductApi = ({ productId, ...data }: any) => api.put(`/merchant/products/${productId}`, data);
+export const deleteProductApi = (productId: any) => api.delete(`/merchant/products/${productId}`);
+export const getProductsApi = () => api.get('/merchant/products').then(res => res.data);
+export const searchProductsApi = (query: any) => api.get('/merchant/products/search', { params: { query } }).then(res => res.data);
+export const getInStockProductsApi = () => api.get('/merchant/products/in-stock').then(res => res.data);
+
+// DASHBOARD API functions
+export const getDashboardStatsApi = () => api.get('/merchant/dashboard/stats').then(res => res.data);
+export const getSalesDataApi = () => api.get('/merchant/dashboard/sales-data').then(res => res.data);
+export const getTrafficDataApi = () => api.get('/merchant/dashboard/traffic-data').then(res => res.data);
+
+
+
+
 

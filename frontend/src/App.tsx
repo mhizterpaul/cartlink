@@ -43,10 +43,10 @@ function App() {
             <Routes>
               <Route path="/" element={<Homepage />} />
               <Route path="/404" element={<NotFound />} />
-              //<Route element={<MerchantAuth />}>
+              <Route element={<MerchantAuth />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/settings" element={<Settings />} />
-              //</Route>
+              </Route>
               <Route path="/products?merchantId=default" element={<Products />} />
               <Route path="/product?productId=defualt" element={<Product />} />
               <Route path="/reviews?productId=default" element={<Reviews />} />

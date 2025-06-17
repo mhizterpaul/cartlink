@@ -1,6 +1,5 @@
 package dev.paul.cartlink.config;
 
-import dev.paul.cartlink.service.SecurityService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -36,14 +35,14 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/customers/signup").permitAll() // Only signup is public
-                        .requestMatchers("/api/merchants/signup", "/api/merchants/login").permitAll()
-                        .requestMatchers("/api/merchants/password-reset-request").permitAll()
-                        .requestMatchers("/api/merchants/password-reset").permitAll()
+                        .requestMatchers("/api/merchant/signup", "/api/merchant/login").permitAll()
+                        .requestMatchers("/api/merchant/password-reset-request").permitAll()
+                        .requestMatchers("/api/merchant/password-reset").permitAll()
                         .requestMatchers("/error").permitAll()
                         // Protected endpoints (require JWT)
                         .requestMatchers("/api/customers/**").authenticated() // All other customer endpoints require
                                                                               // auth
-                        .requestMatchers("/api/merchants/**").authenticated()
+                        .requestMatchers("/api/merchant/**").authenticated()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(securityService),
                         UsernamePasswordAuthenticationFilter.class);

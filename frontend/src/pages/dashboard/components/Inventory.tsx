@@ -28,6 +28,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ProductForm from './Product/ProductForm';
+import CreateLinkDialog from './Product/CreateLinkDialog';
 
 const products = [
     {
@@ -55,6 +56,8 @@ const products = [
 
 export default function Inventory() {
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<{ id: number; name: string } | null>(null);
     const formRef = useRef<HTMLDivElement>(null);
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -72,6 +75,16 @@ export default function Inventory() {
 
     const handleClose = () => {
         setIsFormOpen(false);
+    };
+
+    const handleEditClick = (product: { id: number; name: string }) => {
+        setSelectedProduct(product);
+        setIsLinkDialogOpen(true);
+    };
+
+    const handleLinkDialogClose = () => {
+        setIsLinkDialogOpen(false);
+        setSelectedProduct(null);
     };
 
     return (
@@ -168,7 +181,11 @@ export default function Inventory() {
                                             <Chip label={product.status} color={product.status === 'Active' ? 'success' : 'default'} size="small" />
                                         </TableCell>
                                         <TableCell>
-                                            <IconButton color="primary" size="small">
+                                            <IconButton
+                                                color="primary"
+                                                size="small"
+                                                onClick={() => handleEditClick({ id: idx, name: product.name })}
+                                            >
                                                 <EditIcon />
                                             </IconButton>
                                         </TableCell>
@@ -199,6 +216,13 @@ export default function Inventory() {
                     <ProductForm onClose={handleClose} />
                 </Box>
             </Dialog>
+
+            <CreateLinkDialog
+                open={isLinkDialogOpen}
+                onClose={handleLinkDialogClose}
+                productId={selectedProduct?.id || 0}
+                productName={selectedProduct?.name || ''}
+            />
         </Box>
     );
 } 
