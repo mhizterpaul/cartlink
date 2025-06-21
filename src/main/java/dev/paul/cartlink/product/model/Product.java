@@ -105,9 +105,3 @@ class Dimensions {
     private Double width;
     private Double height;
 }
-
-enum ProductType {
-    ELECTRONICS,
-    FASHION,
-    COSMETICS
-}
