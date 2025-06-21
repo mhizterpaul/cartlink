@@ -30,7 +30,7 @@ public class FormController {
 
         model.addAllAttributes(formData); // Add all data from service (product, missingFields, banner) to model
 
-        return new ModelAndView("merchant/form/edit-product-form", model.asMap());
+        return new ModelAndView("merchant/form/editProductForm.jte", model.asMap());
     }
 
     @PostMapping("/{productId}")
