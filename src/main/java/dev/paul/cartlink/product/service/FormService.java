@@ -1,4 +1,4 @@
-package dev.paul.cartlink.merchant.service;
+package dev.paul.cartlink.product.service;
 
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductType; // Assuming ProductType enum exists in this package
@@ -32,7 +32,8 @@ public class FormService {
     }
 
     /**
-     * Prepares details for rendering the product form, including identifying missing fields.
+     * Prepares details for rendering the product form, including identifying
+     * missing fields.
      *
      * @param productId The ID of the product.
      * @return A map containing product details and a list of missing fields.
@@ -51,14 +52,17 @@ public class FormService {
         details.put("product", product);
 
         List<String> expectedFields = productTypeSchemas.getOrDefault(type, Collections.emptyList());
-        Map<String, String> currentSpecifications = product.getSpecifications() == null ? new HashMap<>() : product.getSpecifications();
+        Map<String, String> currentSpecifications = product.getSpecifications() == null ? new HashMap<>()
+                : product.getSpecifications();
 
         List<String> missingFields = expectedFields.stream()
-                                                   .filter(field -> !currentSpecifications.containsKey(field) || currentSpecifications.get(field) == null || currentSpecifications.get(field).trim().isEmpty())
-                                                   .collect(Collectors.toList());
+                .filter(field -> !currentSpecifications.containsKey(field) || currentSpecifications.get(field) == null
+                        || currentSpecifications.get(field).trim().isEmpty())
+                .collect(Collectors.toList());
 
         details.put("missingFields", missingFields);
-        details.put("suggestionBanner", !missingFields.isEmpty() ? "Add missing fields to help improve the product listing." : "");
+        details.put("suggestionBanner",
+                !missingFields.isEmpty() ? "Add missing fields to help improve the product listing." : "");
 
         return details;
     }
@@ -66,8 +70,9 @@ public class FormService {
     /**
      * Updates the product's additional fields (specifications).
      *
-     * @param productId The ID of the product to update.
-     * @param submittedFields A map of fields to add or update in the product's specifications.
+     * @param productId       The ID of the product to update.
+     * @param submittedFields A map of fields to add or update in the product's
+     *                        specifications.
      */
     @Transactional // Ensures the operation is atomic
     public void updateProductWithAdditionalFields(Long productId, Map<String, String> submittedFields) {

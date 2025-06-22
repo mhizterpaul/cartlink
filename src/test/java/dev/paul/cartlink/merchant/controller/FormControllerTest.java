@@ -1,8 +1,10 @@
 package dev.paul.cartlink.merchant.controller;
 
-import dev.paul.cartlink.merchant.service.FormService;
+import dev.paul.cartlink.product.controller.FormController;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductType;
+import dev.paul.cartlink.product.service.FormService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,11 +47,14 @@ public class FormControllerTest {
         sampleProduct.setType(ProductType.ELECTRONICS);
         sampleProduct.setSpecifications(new HashMap<>());
 
-        // Standalone setup for controller tests is often simpler than full Spring context
+        // Standalone setup for controller tests is often simpler than full Spring
+        // context
         mockMvc = MockMvcBuilders.standaloneSetup(formController)
-                                 // Optional: Add view resolver if testing view rendering details, less common for pure controller unit tests
-                                 // .setViewResolvers(new InternalResourceViewResolver("/WEB-INF/jte/", ".jte")) // Adjust for JTE if needed
-                                 .build();
+                // Optional: Add view resolver if testing view rendering details, less common
+                // for pure controller unit tests
+                // .setViewResolvers(new InternalResourceViewResolver("/WEB-INF/jte/", ".jte"))
+                // // Adjust for JTE if needed
+                .build();
     }
 
     // Tests for showProductForm (GET)
@@ -63,11 +68,11 @@ public class FormControllerTest {
         when(formService.getProductDetailsForForm(1L)).thenReturn(formData);
 
         mockMvc.perform(get("/merchant/form/1"))
-               .andExpect(status().isOk())
-               .andExpect(view().name("merchant/form/editProductForm.jte"))
-               .andExpect(model().attribute("product", sampleProduct))
-               .andExpect(model().attribute("missingFields", Arrays.asList("RAM", "Storage")))
-               .andExpect(model().attribute("suggestionBanner", "Please add missing fields."));
+                .andExpect(status().isOk())
+                .andExpect(view().name("merchant/form/editProductForm.jte"))
+                .andExpect(model().attribute("product", sampleProduct))
+                .andExpect(model().attribute("missingFields", Arrays.asList("RAM", "Storage")))
+                .andExpect(model().attribute("suggestionBanner", "Please add missing fields."));
     }
 
     @Test
@@ -75,8 +80,8 @@ public class FormControllerTest {
         when(formService.getProductDetailsForForm(2L)).thenReturn(new HashMap<>()); // Empty map indicates not found
 
         mockMvc.perform(get("/merchant/form/2"))
-               .andExpect(status().is3xxRedirection())
-               .andExpect(redirectedUrl("/merchant/products?error=productNotFound"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/merchant/products?error=productNotFound"));
     }
 
     @Test
@@ -86,10 +91,9 @@ public class FormControllerTest {
         when(formService.getProductDetailsForForm(3L)).thenReturn(formData);
 
         mockMvc.perform(get("/merchant/form/3"))
-               .andExpect(status().is3xxRedirection())
-               .andExpect(redirectedUrl("/merchant/products?error=productNotFound"));
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/merchant/products?error=productNotFound"));
     }
-
 
     // Tests for handleProductFormUpdate (POST)
     @Test
@@ -101,12 +105,12 @@ public class FormControllerTest {
         doNothing().when(formService).updateProductWithAdditionalFields(eq(1L), anyMap());
 
         mockMvc.perform(post("/merchant/form/1")
-                       .param("specifications[Color]", "Blue")
-                       .param("specifications[Size]", "Large")
-                       .param("unrelatedParam", "shouldBeIgnored"))
-               .andExpect(status().is3xxRedirection())
-               .andExpect(redirectedUrl("/merchant/product/1"))
-               .andExpect(flash().attribute("successMessage", "Product updated successfully!"));
+                .param("specifications[Color]", "Blue")
+                .param("specifications[Size]", "Large")
+                .param("unrelatedParam", "shouldBeIgnored"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/merchant/product/1"))
+                .andExpect(flash().attribute("successMessage", "Product updated successfully!"));
 
         verify(formService).updateProductWithAdditionalFields(eq(1L), eq(expectedSpecifications));
     }
@@ -114,24 +118,24 @@ public class FormControllerTest {
     @Test
     void handleProductFormUpdate_serviceThrowsIllegalArgument_redirectsAndAddsErrorFlash() throws Exception {
         doThrow(new IllegalArgumentException("Product not found by service"))
-            .when(formService).updateProductWithAdditionalFields(eq(1L), anyMap());
+                .when(formService).updateProductWithAdditionalFields(eq(1L), anyMap());
 
         mockMvc.perform(post("/merchant/form/1")
-                       .param("specifications[Color]", "Red"))
-               .andExpect(status().is3xxRedirection())
-               .andExpect(redirectedUrl("/merchant/form/1"))
-               .andExpect(flash().attribute("errorMessage", "Error updating product: Product not found by service"));
+                .param("specifications[Color]", "Red"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/merchant/form/1"))
+                .andExpect(flash().attribute("errorMessage", "Error updating product: Product not found by service"));
     }
 
     @Test
     void handleProductFormUpdate_serviceThrowsGenericException_redirectsAndAddsErrorFlash() throws Exception {
         doThrow(new RuntimeException("Unexpected service error"))
-            .when(formService).updateProductWithAdditionalFields(eq(1L), anyMap());
+                .when(formService).updateProductWithAdditionalFields(eq(1L), anyMap());
 
         mockMvc.perform(post("/merchant/form/1")
-                       .param("specifications[Color]", "Green"))
-               .andExpect(status().is3xxRedirection())
-               .andExpect(redirectedUrl("/merchant/form/1"))
-               .andExpect(flash().attribute("errorMessage", "An unexpected error occurred."));
+                .param("specifications[Color]", "Green"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/merchant/form/1"))
+                .andExpect(flash().attribute("errorMessage", "An unexpected error occurred."));
     }
 }

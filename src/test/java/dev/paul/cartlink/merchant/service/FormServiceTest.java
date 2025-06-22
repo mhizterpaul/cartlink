@@ -3,6 +3,8 @@ package dev.paul.cartlink.merchant.service;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductType;
 import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.product.service.FormService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,9 +51,10 @@ public class FormServiceTest {
 
         assertNotNull(details.get("product"));
         List<String> missingFields = (List<String>) details.get("missingFields");
-        // Based on FormService static schema for ELECTRONICS: "Screen Size", "RAM", "Storage Capacity"
+        // Based on FormService static schema for ELECTRONICS: "Screen Size", "RAM",
+        // "Storage Capacity"
         assertTrue(missingFields.containsAll(Arrays.asList("Screen Size", "RAM", "Storage Capacity")));
-        assertFalse(((String)details.get("suggestionBanner")).isEmpty());
+        assertFalse(((String) details.get("suggestionBanner")).isEmpty());
     }
 
     @Test
@@ -65,7 +68,7 @@ public class FormServiceTest {
         assertTrue(missingFields.contains("Screen Size"));
         assertFalse(missingFields.contains("RAM"));
         assertTrue(missingFields.contains("Storage Capacity"));
-        assertFalse(((String)details.get("suggestionBanner")).isEmpty());
+        assertFalse(((String) details.get("suggestionBanner")).isEmpty());
     }
 
     @Test
@@ -79,28 +82,30 @@ public class FormServiceTest {
         List<String> missingFields = (List<String>) details.get("missingFields");
 
         assertTrue(missingFields.isEmpty());
-        assertTrue(((String)details.get("suggestionBanner")).isEmpty());
+        assertTrue(((String) details.get("suggestionBanner")).isEmpty());
     }
 
     @Test
     void getProductDetailsForForm_productTypeWithNoSchema_noMissingFields() {
         sampleProduct.setType(ProductType.valueOf("COSMETICS")); // Assuming COSMETICS has a schema in FormService
-        // Let's create a dummy type or ensure one exists that FormService has no schema for
-        // For this test, let's assume there's a product type not in FormService.productTypeSchemas
+        // Let's create a dummy type or ensure one exists that FormService has no schema
+        // for
+        // For this test, let's assume there's a product type not in
+        // FormService.productTypeSchemas
         // This requires modifying FormService or ProductType for a truly unknown type,
         // or testing with a type that has an explicitly empty list in the schema.
-        // For now, let's test with a type that has a defined schema, but the product has all fields.
-         sampleProduct.setType(ProductType.FASHION); // Schema: "Color", "Material", "Size Fit"
-         sampleProduct.getSpecifications().put("Color", "Blue");
-         sampleProduct.getSpecifications().put("Material", "Cotton");
-         sampleProduct.getSpecifications().put("Size Fit", "Regular");
-         when(productRepository.findById(1L)).thenReturn(Optional.of(sampleProduct));
+        // For now, let's test with a type that has a defined schema, but the product
+        // has all fields.
+        sampleProduct.setType(ProductType.FASHION); // Schema: "Color", "Material", "Size Fit"
+        sampleProduct.getSpecifications().put("Color", "Blue");
+        sampleProduct.getSpecifications().put("Material", "Cotton");
+        sampleProduct.getSpecifications().put("Size Fit", "Regular");
+        when(productRepository.findById(1L)).thenReturn(Optional.of(sampleProduct));
 
-         Map<String, Object> details = formService.getProductDetailsForForm(1L);
-         List<String> missingFields = (List<String>) details.get("missingFields");
-         assertTrue(missingFields.isEmpty());
+        Map<String, Object> details = formService.getProductDetailsForForm(1L);
+        List<String> missingFields = (List<String>) details.get("missingFields");
+        assertTrue(missingFields.isEmpty());
     }
-
 
     @Test
     void getProductDetailsForForm_productNotFound_returnsEmptyMap() {
@@ -161,7 +166,6 @@ public class FormServiceTest {
         assertNull(sampleProduct.getSpecifications().get("Feature")); // Assuming it wasn't there before
         verify(productRepository, times(1)).save(sampleProduct); // Still saves product
     }
-
 
     @Test
     void updateProductWithAdditionalFields_productNotFound_throwsException() {
