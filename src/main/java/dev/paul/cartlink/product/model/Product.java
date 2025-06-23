@@ -62,12 +62,6 @@ public class Product {
 
     private Boolean imported;
 
-    @ElementCollection
-    @CollectionTable(name = "product_specifications", joinColumns = @JoinColumn(name = "product_id"))
-    @MapKeyColumn(name = "spec_key")
-    @Column(name = "spec_value", columnDefinition = "TEXT")
-    private Map<String, String> specifications;
-
     @ManyToOne
     @JoinColumn(name = "merchant_id")
     private dev.paul.cartlink.merchant.model.Merchant merchant;

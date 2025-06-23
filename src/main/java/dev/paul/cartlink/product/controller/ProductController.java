@@ -29,7 +29,6 @@ public class ProductController {
             Product product = new Product();
             product.setName((String) request.get("name"));
             product.setDescription((String) request.get("description"));
-            product.setSpecifications((Map<String, String>) request.get("specifications"));
 
             MerchantProduct merchantProduct = productService.addProduct(
                     merchant,
@@ -56,7 +55,6 @@ public class ProductController {
             Product product = new Product();
             product.setName((String) request.get("name"));
             product.setDescription((String) request.get("description"));
-            product.setSpecifications((Map<String, String>) request.get("specifications"));
 
             return ResponseEntity.ok(Map.of(
                     "message", "Product updated successfully"));

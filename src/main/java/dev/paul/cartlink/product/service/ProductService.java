@@ -32,8 +32,7 @@ public class ProductService {
         merchantProduct.setProduct(savedProduct);
         merchantProduct.setStock(stock);
         merchantProduct.setPrice(price);
-        merchantProduct.setDiscount(discount);
-        merchantProduct.setLogisticsProvider(logisticsProvider);
+        
 
         return merchantProductRepository.save(merchantProduct);
     }
@@ -46,12 +45,9 @@ public class ProductService {
         Product existingProduct = merchantProduct.getProduct();
         existingProduct.setName(product.getName());
         existingProduct.setDescription(product.getDescription());
-        existingProduct.setSpecifications(product.getSpecifications());
 
         merchantProduct.setStock(stock);
         merchantProduct.setPrice(price);
-        merchantProduct.setDiscount(discount);
-        merchantProduct.setLogisticsProvider(logisticsProvider);
 
         return merchantProductRepository.save(merchantProduct);
     }
