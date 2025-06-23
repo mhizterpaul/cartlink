@@ -1,12 +1,11 @@
 package dev.mhizterpaul.cartlink.integration.customer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.paul.cartlink.customer.dto.CustomerAuthResponse;
+import dev.paul.cartlink.customer.dto.CustomerProfileUpdateRequest;
+import dev.paul.cartlink.customer.dto.OrderHistoryResponse;
 import dev.paul.cartlink.customer.service.SignUpRequest; // Path from ls output (customer.service)
-// Assuming other DTOs like CustomerProfileUpdateRequest, CustomerAuthResponse, OrderHistoryResponse
-// would be in dev.paul.cartlink.customer.dto or a common dto package.
-import dev.paul.cartlink.dto.request.CustomerProfileUpdateRequest; // Placeholder
-import dev.paul.cartlink.dto.response.CustomerAuthResponse; // Placeholder
-import dev.paul.cartlink.dto.response.OrderHistoryResponse; // Placeholder
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,7 +39,6 @@ public class CustomerControllerIT {
     // Placeholder for Address DTO, assuming it's nested or a separate class
     private SignUpRequest.AddressDto validAddressDto;
 
-
     @BeforeEach
     void setUp() {
         // Assuming SignUpRequest has a nested AddressDto or similar structure
@@ -53,8 +51,7 @@ public class CustomerControllerIT {
                 "CustFirst",
                 "CustLast",
                 "+12345678901",
-                validAddressDto
-        );
+                validAddressDto);
     }
 
     @Nested
@@ -91,18 +88,21 @@ public class CustomerControllerIT {
         @Test
         @DisplayName("Should allow authenticated customer to update their profile")
         void whenAuthenticated_andValidUpdateData_thenReturns200() throws Exception {
-            // Step 1: Signup to get a session/cookie (or obtain one through login if separate)
-            // For simplicity in this isolated test, we'll assume a cookie representing an authenticated user
+            // Step 1: Signup to get a session/cookie (or obtain one through login if
+            // separate)
+            // For simplicity in this isolated test, we'll assume a cookie representing an
+            // authenticated user
             // In a full BDT, you'd get this from a login step.
 
             // Assume signup creates a session cookie named "JSESSIONID" (common default)
-            // This part would ideally be preceded by a login/signup that establishes the cookie.
+            // This part would ideally be preceded by a login/signup that establishes the
+            // cookie.
             // For this test, we'll manually create a placeholder cookie.
             // A more robust way would be to perform a login and extract the cookie.
 
             // First, sign up a user to ensure the customer exists for profile update.
             // (This also helps if the profile update endpoint requires the user to exist)
-             mockMvc.perform(post("/api/v1/customers/signup")
+            mockMvc.perform(post("/api/v1/customers/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(validCustomerSignUpRequest)))
                     .andExpect(status().isCreated());
@@ -111,10 +111,10 @@ public class CustomerControllerIT {
             // In a real test, you'd capture the cookie from the signup/login response
             MockCookie sessionCookie = new MockCookie("JSESSIONID", "mock-customer-session-id-for-update");
 
-            CustomerProfileUpdateRequest.AddressDto updateAddressDto = new CustomerProfileUpdateRequest.AddressDto("789 New St", "NewCity", "NC", "NewLand", "67890");
+            CustomerProfileUpdateRequest.AddressDto updateAddressDto = new CustomerProfileUpdateRequest.AddressDto(
+                    "789 New St", "NewCity", "NC", "NewLand", "67890");
             CustomerProfileUpdateRequest profileUpdateRequest = new CustomerProfileUpdateRequest(
-                    "UpdatedFirst", "UpdatedLast", "+9876543210", updateAddressDto
-            );
+                    "UpdatedFirst", "UpdatedLast", "+9876543210", updateAddressDto);
 
             mockMvc.perform(put("/api/v1/customers/profile")
                     .cookie(sessionCookie) // Send the session cookie
@@ -151,8 +151,12 @@ public class CustomerControllerIT {
 
     // --- Notes on CustomerControllerIT ---
     // - Assumed SignUpRequest DTO from dev.paul.cartlink.customer.service.
-    // - Other DTOs (CustomerProfileUpdateRequest, CustomerAuthResponse, OrderHistoryResponse) are placeholders.
-    // - Cookie-based authentication is simulated. A more robust approach for obtaining cookies would be
-    //   to perform a login (if available and sets a cookie) and capture the cookie from its response.
-    // - `@Transactional` ensures data from one test (like signup) doesn't interfere with others.
+    // - Other DTOs (CustomerProfileUpdateRequest, CustomerAuthResponse,
+    // OrderHistoryResponse) are placeholders.
+    // - Cookie-based authentication is simulated. A more robust approach for
+    // obtaining cookies would be
+    // to perform a login (if available and sets a cookie) and capture the cookie
+    // from its response.
+    // - `@Transactional` ensures data from one test (like signup) doesn't interfere
+    // with others.
 }

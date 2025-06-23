@@ -2,16 +2,15 @@ package dev.mhizterpaul.cartlink.integration.merchant;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.merchant.dto.LoginRequest; // Actual DTO path
-import dev.paul.cartlink.merchant.dto.SignUpRequest;  // Actual DTO path
-import dev.paul.cartlink.merchant.dto.AuthResponse;    // Actual DTO path
+import dev.paul.cartlink.merchant.dto.SignUpRequest; // Actual DTO path
+import dev.paul.cartlink.merchant.dto.AuthResponse; // Actual DTO path
 // Assuming other DTOs like MerchantProfileUpdateRequest, PasswordResetRequestRequest etc.
 // would be in dev.paul.cartlink.merchant.dto or a common dto package.
 // For now, using placeholder fully qualified names if direct match not found in listing.
-import dev.paul.cartlink.dto.request.MerchantProfileUpdateRequest; // Placeholder
-import dev.paul.cartlink.dto.request.PasswordResetExecutionRequest; // Placeholder
-import dev.paul.cartlink.dto.request.PasswordResetRequestRequest; // Placeholder
-import dev.paul.cartlink.dto.request.RefreshTokenRequest; // Placeholder
-
+import dev.paul.cartlink.merchant.dto.MerchantProfileUpdateRequest; // Placeholder
+import dev.paul.cartlink.merchant.dto.PasswordResetExecutionRequest; // Placeholder
+import dev.paul.cartlink.merchant.dto.PasswordResetRequestRequest; // Placeholder
+import dev.paul.cartlink.merchant.dto.RefreshTokenRequest; // Placeholder
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,8 +51,7 @@ public class MerchantControllerIT {
                 "Password123!",
                 "Test",
                 "Merchant",
-                "http://example.com/image.png"
-        );
+                "http://example.com/image.png");
         validLoginRequest = new LoginRequest(validSignUpRequest.getEmail(), validSignUpRequest.getPassword());
     }
 
@@ -102,7 +100,8 @@ public class MerchantControllerIT {
         @Test
         @DisplayName("Should return 400 Bad Request for invalid signup data (e.g., invalid email)")
         void whenInvalidEmailFormat_thenReturns400() throws Exception {
-            SignUpRequest invalidEmailRequest = new SignUpRequest("invalid-email", "Password123!", "Test", "User", null);
+            SignUpRequest invalidEmailRequest = new SignUpRequest("invalid-email", "Password123!", "Test", "User",
+                    null);
             mockMvc.perform(post("/api/v1/merchants/signup")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(invalidEmailRequest)))
@@ -131,7 +130,8 @@ public class MerchantControllerIT {
     // - Perform mockMvc call.
     // - Assert status and response content.
     // - For protected endpoints, include Authorization header.
-    // - For state-changing operations, consider verifying DB state if crucial and not covered by other BDT steps.
+    // - For state-changing operations, consider verifying DB state if crucial and
+    // not covered by other BDT steps.
 
     // --- Notes on MerchantControllerIT ---
     // - Assumed DTOs from dev.paul.cartlink.merchant.dto. Placeholder for others.

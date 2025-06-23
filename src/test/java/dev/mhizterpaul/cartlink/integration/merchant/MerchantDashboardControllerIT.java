@@ -3,8 +3,8 @@ package dev.mhizterpaul.cartlink.integration.merchant;
 import com.fasterxml.jackson.databind.ObjectMapper;
 // Assuming DTOs are in dev.paul.cartlink.merchant.dto or common
 import dev.paul.cartlink.merchant.dto.DashboardStatsResponse; // Placeholder
-import dev.paul.cartlink.merchant.dto.SalesDataResponse;    // Placeholder
-import dev.paul.cartlink.merchant.dto.TrafficDataResponse;  // Placeholder
+import dev.paul.cartlink.merchant.dto.SalesDataResponse; // Placeholder
+import dev.paul.cartlink.merchant.dto.TrafficDataResponse; // Placeholder
 
 // For test data setup
 import dev.paul.cartlink.merchant.model.Merchant;
@@ -36,12 +36,16 @@ import java.util.Collections;
 @DisplayName("Merchant Dashboard API Integration Tests")
 public class MerchantDashboardControllerIT {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private MerchantRepository merchantRepository;
-    // Autowire other repositories like OrderRepository, ProductLinkRepository if needed for direct data setup for dashboard tests
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private MerchantRepository merchantRepository;
+    // Autowire other repositories like OrderRepository, ProductLinkRepository if
+    // needed for direct data setup for dashboard tests
 
-    private String testMerchantId;
+    private Long testMerchantId;
 
     @BeforeEach
     void setUpTestData() {
@@ -52,25 +56,31 @@ public class MerchantDashboardControllerIT {
         Merchant savedMerchant = merchantRepository.save(merchant);
         testMerchantId = savedMerchant.getId();
 
-        // Potentially create some orders, products, links, and track some analytics events here
-        // if the dashboard relies on fresh data and can't be tested with zero/empty state.
-        // For now, tests will check structure assuming services might return zero/empty data.
+        // Potentially create some orders, products, links, and track some analytics
+        // events here
+        // if the dashboard relies on fresh data and can't be tested with zero/empty
+        // state.
+        // For now, tests will check structure assuming services might return zero/empty
+        // data.
     }
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/dashboard/stats")
-    @WithMockUser(username = "test-dashboard-merchant", roles = {"MERCHANT"}) // Ensure username matches if service uses principal name
+    @WithMockUser(username = "test-dashboard-merchant", roles = { "MERCHANT" }) // Ensure username matches if service
+                                                                                // uses principal name
     class GetDashboardStats {
         @Test
         @DisplayName("Should return 200 OK with dashboard statistics structure")
         void whenAuthenticated_thenReturnsDashboardStats() throws Exception {
             // Test assumes the service layer will calculate stats. We check for structure.
-            // If specific stats are expected (e.g. for a new merchant), assertions can be more precise.
+            // If specific stats are expected (e.g. for a new merchant), assertions can be
+            // more precise.
             mockMvc.perform(get("/api/v1/merchants/{merchantId}/dashboard/stats", testMerchantId)
-                    // If @WithMockUser principal name is used by controller/service for merchantId,
-                    // ensure it aligns or pass the correct merchantId.
-                    // .header("Authorization", "Bearer <token_for_testMerchantId>") // Alternative auth
-                    )
+            // If @WithMockUser principal name is used by controller/service for merchantId,
+            // ensure it aligns or pass the correct merchantId.
+            // .header("Authorization", "Bearer <token_for_testMerchantId>") // Alternative
+            // auth
+            )
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.totalSales").isNumber())
                     .andExpect(jsonPath("$.totalOrders").isNumber())
@@ -82,7 +92,7 @@ public class MerchantDashboardControllerIT {
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/dashboard/sales-data")
-    @WithMockUser(username = "test-dashboard-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-dashboard-merchant", roles = { "MERCHANT" })
     class GetSalesData {
         @Test
         @DisplayName("Should return 200 OK with sales data structure for a valid period")
@@ -93,13 +103,13 @@ public class MerchantDashboardControllerIT {
                     .param("endDate", "2024-01-07"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray());
-                    // Further assertions on array content if specific data is set up and expected
+            // Further assertions on array content if specific data is set up and expected
         }
     }
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/dashboard/traffic-data")
-    @WithMockUser(username = "test-dashboard-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-dashboard-merchant", roles = { "MERCHANT" })
     class GetTrafficData {
         @Test
         @DisplayName("Should return 200 OK with traffic data structure")
@@ -107,7 +117,7 @@ public class MerchantDashboardControllerIT {
             mockMvc.perform(get("/api/v1/merchants/{merchantId}/dashboard/traffic-data", testMerchantId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray());
-                    // Further assertions on array content if specific data is set up and expected
+            // Further assertions on array content if specific data is set up and expected
         }
     }
 
@@ -115,6 +125,8 @@ public class MerchantDashboardControllerIT {
     // - Targets dev.paul.cartlink.merchant.controller.MerchantDashboardController.
     // - Assumes a MerchantDashboardService or similar handles the logic.
     // - Placeholder DTOs used.
-    // - Data setup for dashboard might be complex if it requires many underlying entities (orders, clicks).
-    //   Current tests focus on reachability and basic structure for a new/empty merchant.
+    // - Data setup for dashboard might be complex if it requires many underlying
+    // entities (orders, clicks).
+    // Current tests focus on reachability and basic structure for a new/empty
+    // merchant.
 }

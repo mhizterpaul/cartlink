@@ -24,4 +24,9 @@ public class LoginRequest {
     private String password;
 
     private String type; // "USER" or "MERCHANT"
+
+    public LoginRequest(String email, String password) {
+        this.email = email;
+        this.password = password;
+    }
 }

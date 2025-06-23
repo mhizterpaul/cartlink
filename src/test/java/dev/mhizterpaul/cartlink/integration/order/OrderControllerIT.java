@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 // Assuming DTOs are in dev.paul.cartlink.order.dto or common
 import dev.paul.cartlink.order.dto.OrderResponse; // Placeholder
 import dev.paul.cartlink.order.dto.OrderStatusUpdateRequest; // Placeholder
-import dev.paul.cartlink.dto.response.SimpleSuccessResponse; // Common Placeholder
+import dev.paul.cartlink.order.dto.SimpleSuccessResponse; // Common Placeholder
 
 // For test data setup
 import dev.paul.cartlink.merchant.model.Merchant;
@@ -42,17 +42,22 @@ import java.util.Collections;
 @DisplayName("Merchant Order Management API Integration Tests")
 public class OrderControllerIT {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private MerchantRepository merchantRepository;
-    @Autowired private CustomerRepository customerRepository;
-    @Autowired private ProductRepository productRepository;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private MerchantRepository merchantRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
-
-    private String testMerchantId;
-    private String testOrderId;
-    private String testLinkId; // Assuming product links are involved in order creation indirectly
+    private Long testMerchantId;
+    private Long testOrderId;
+    private Long testLinkId; // Assuming product links are involved in order creation indirectly
 
     @BeforeEach
     void setUpTestData() {
@@ -70,7 +75,7 @@ public class OrderControllerIT {
 
         Product product = new Product();
         product.setName("Order Product");
-        product.setPrice(BigDecimal.valueOf(10.00));
+        product.setPrice(10.00);
         product.setStock(5);
         product.setMerchant(savedMerchant);
         Product savedProduct = productRepository.save(product);
@@ -87,13 +92,14 @@ public class OrderControllerIT {
         testOrderId = savedOrder.getId();
 
         // If orders are tied to product links, set up a link
-        // For now, assuming testLinkId might be used as a filter if applicable by the service
-        testLinkId = "sample-link-id-for-order-filter";
+        // For now, assuming testLinkId might be used as a filter if applicable by the
+        // service
+        // testLinkId = "sample-link-id-for-order-filter";
     }
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/orders")
-    @WithMockUser(username = "test-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-merchant", roles = { "MERCHANT" })
     class ViewOrders {
         @Test
         @DisplayName("Should retrieve orders for the merchant")
@@ -111,7 +117,7 @@ public class OrderControllerIT {
 
     @Nested
     @DisplayName("PUT /api/v1/merchants/{merchantId}/orders/{orderId}/status")
-    @WithMockUser(username = "test-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-merchant", roles = { "MERCHANT" })
     class UpdateOrderStatus {
         @Test
         @DisplayName("Should update order status and return success")
@@ -129,14 +135,16 @@ public class OrderControllerIT {
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/orders/link/{linkId}")
-    @WithMockUser(username = "test-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-merchant", roles = { "MERCHANT" })
     class GetOrdersByLink {
         @Test
         @DisplayName("Should retrieve orders associated with a specific linkId")
         void whenLinkExists_thenReturnsAssociatedOrders() throws Exception {
             // This test assumes that orders can be associated with a linkId.
-            // The setup might need to create an order specifically associated with testLinkId.
-            // For now, it will fetch based on the global testLinkId. If no orders match, it might return empty.
+            // The setup might need to create an order specifically associated with
+            // testLinkId.
+            // For now, it will fetch based on the global testLinkId. If no orders match, it
+            // might return empty.
             mockMvc.perform(get("/api/v1/merchants/{merchantId}/orders/link/{linkId}", testMerchantId, testLinkId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray()); // Expecting a list, possibly empty if no direct link
@@ -145,7 +153,8 @@ public class OrderControllerIT {
 
     // --- Notes on OrderControllerIT (Merchant) ---
     // - Targets dev.paul.cartlink.order.controller.OrderController.
-    // - Uses actual repositories (OrderRepository, MerchantRepository, etc.) for test data setup.
+    // - Uses actual repositories (OrderRepository, MerchantRepository, etc.) for
+    // test data setup.
     // - Assumes OrderStatus is an enum.
     // - Placeholder DTOs used.
 }

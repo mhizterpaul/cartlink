@@ -45,8 +45,6 @@ public class ProductService {
 
         Product existingProduct = merchantProduct.getProduct();
         existingProduct.setName(product.getName());
-        existingProduct.setModel(product.getModel());
-        existingProduct.setManufacturer(product.getManufacturer());
         existingProduct.setDescription(product.getDescription());
         existingProduct.setSpecifications(product.getSpecifications());
 

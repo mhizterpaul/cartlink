@@ -40,4 +40,72 @@ public class SignUpRequest {
         private String middleName;
         private String phoneNumber;
         private String type; // "MERCHANT" or "CUSTOMER"
+        private AddressDto address;
+
+        public SignUpRequest(String email, String firstName, String lastName, String phoneNumber, AddressDto address) {
+                this.email = email;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.phoneNumber = phoneNumber;
+                this.address = address;
+        }
+
+        public static class AddressDto {
+                private String street;
+                private String city;
+                private String state;
+                private String country;
+                private String postalCode;
+
+                public AddressDto() {
+                }
+
+                public AddressDto(String street, String city, String state, String country, String postalCode) {
+                        this.street = street;
+                        this.city = city;
+                        this.state = state;
+                        this.country = country;
+                        this.postalCode = postalCode;
+                }
+
+                public String getStreet() {
+                        return street;
+                }
+
+                public void setStreet(String street) {
+                        this.street = street;
+                }
+
+                public String getCity() {
+                        return city;
+                }
+
+                public void setCity(String city) {
+                        this.city = city;
+                }
+
+                public String getState() {
+                        return state;
+                }
+
+                public void setState(String state) {
+                        this.state = state;
+                }
+
+                public String getCountry() {
+                        return country;
+                }
+
+                public void setCountry(String country) {
+                        this.country = country;
+                }
+
+                public String getPostalCode() {
+                        return postalCode;
+                }
+
+                public void setPostalCode(String postalCode) {
+                        this.postalCode = postalCode;
+                }
+        }
 }

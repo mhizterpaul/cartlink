@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -21,11 +22,13 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long productId;
 
+    private Long typeId;
+
     @NotBlank(message = "Product name is required")
     private String name;
 
     @NotBlank(message = "Manufacturer is required")
-    private String manufacturer;
+    private String brand;
 
     @NotNull(message = "Production year is required")
     private Integer productionYear;
@@ -39,8 +42,7 @@ public class Product {
     private Integer unitsInStock;
 
     @NotNull(message = "Product type is required")
-    @Enumerated(EnumType.STRING)
-    private ProductType type;
+    private String productType;
 
     @Column(columnDefinition = "TEXT")
     @NotBlank(message = "Description is required")
@@ -60,48 +62,87 @@ public class Product {
 
     private Boolean imported;
 
-    // Electronics specific fields
-    @Embedded
-    private Dimensions dimensions;
-
-    private String model;
-
-    @Column(columnDefinition = "TEXT")
-    private String spec;
-
-    private String warranty;
-    private String marketVariant;
-    private String powerRating;
-    private String electronicsType;
-
-    // Fashion specific fields
-    private String sex;
-    private String fashionType;
-    private String size;
-    private String material;
-
-    // Cosmetics specific fields
-    private String skinType;
-
-    @Column(columnDefinition = "TEXT")
-    private String ingredients;
-
-    @Column(columnDefinition = "TEXT")
-    private String applicationDirection;
-
     @ElementCollection
     @CollectionTable(name = "product_specifications", joinColumns = @JoinColumn(name = "product_id"))
     @MapKeyColumn(name = "spec_key")
     @Column(name = "spec_value", columnDefinition = "TEXT")
     private Map<String, String> specifications;
-}
 
-@Embeddable
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-class Dimensions {
-    private Double length;
-    private Double width;
-    private Double height;
+    @ManyToOne
+    @JoinColumn(name = "merchant_id")
+    private dev.paul.cartlink.merchant.model.Merchant merchant;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Coupon> coupons;
+
+    // --- Dynamic Form Core Fields ---
+    private String category;
+
+    public Long getId() {
+        return productId;
+    }
+
+    public void setTypeId(Long typeId) {
+        this.typeId = typeId;
+    }
+
+    public Long getTypeId() {
+        return this.typeId;
+    }
+
+    public void setStock(int stock) {
+        this.unitsInStock = stock;
+    }
+
+    public void setMerchant(dev.paul.cartlink.merchant.model.Merchant merchant) {
+        this.merchant = merchant;
+    }
+
+    public Set<Coupon> getCoupons() {
+        return coupons;
+    }
+
+    public void setCoupons(Set<Coupon> coupons) {
+        this.coupons = coupons;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getProductType() {
+        return productType;
+    }
+
+    public void setProductType(String productType) {
+        this.productType = productType;
+    }
+
+    public String getBrand() {
+        return brand;
+    }
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 }

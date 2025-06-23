@@ -45,8 +45,8 @@ public class ProductLinkControllerIT {
     @Autowired
     private MerchantRepository merchantRepository; // To help setup test data
 
-    private String testMerchantId;
-    private String testProductId;
+    private Long testMerchantId;
+    private Long testProductId;
 
     @BeforeEach
     void setUpTestData() {
@@ -62,7 +62,7 @@ public class ProductLinkControllerIT {
         // Create a product to generate a link for
         Product product = new Product();
         product.setName("Linkable Product");
-        product.setPrice(java.math.BigDecimal.valueOf(29.99));
+        product.setPrice(29.99);
         product.setStock(100);
         product.setMerchant(savedMerchant);
         // Set other mandatory fields for Product if any
@@ -72,12 +72,13 @@ public class ProductLinkControllerIT {
 
     @Nested
     @DisplayName("POST /api/v1/merchants/{merchantId}/products/{productId}/generate-link")
-    @WithMockUser(username = "test-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-merchant", roles = { "MERCHANT" })
     class GenerateLink {
         @Test
         @DisplayName("Should generate a new link for an existing product and return 201 Created")
         void whenProductExists_thenGeneratesLink() throws Exception {
-            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/generate-link", testMerchantId, testProductId))
+            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/generate-link", testMerchantId,
+                    testProductId))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.linkId").exists())
                     .andExpect(jsonPath("$.url").exists());
@@ -86,20 +87,22 @@ public class ProductLinkControllerIT {
         @Test
         @DisplayName("Should return 404 Not Found when trying to generate link for non-existent product")
         void whenProductNotFound_thenReturns404() throws Exception {
-            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/generate-link", testMerchantId, "non-existent-product-id"))
+            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/generate-link", testMerchantId,
+                    "non-existent-product-id"))
                     .andExpect(status().isNotFound());
         }
     }
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/products/links")
-    @WithMockUser(username = "test-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-merchant", roles = { "MERCHANT" })
     class GetAllLinks {
         @Test
         @DisplayName("Should return 200 OK with a list of links for the merchant")
         void whenLinksExist_thenReturnsLinkList() throws Exception {
             // First, generate a link to ensure there's something to list
-            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/generate-link", testMerchantId, testProductId))
+            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/generate-link", testMerchantId,
+                    testProductId))
                     .andExpect(status().isCreated());
 
             mockMvc.perform(get("/api/v1/merchants/{merchantId}/products/links", testMerchantId)

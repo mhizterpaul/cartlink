@@ -64,19 +64,26 @@ public class Merchant implements UserDetails {
     @JsonManagedReference(value = "merchant-products")
     private List<MerchantProduct> merchantProducts;
 
+    public Merchant(String email, String password, String firstName, String lastName) {
+        this.email = email;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_MERCHANT"));
     }
 
     @Override
-    public String getUsername() {
-        return email;
+    public String getPassword() {
+        return password;
     }
 
     @Override
-    public String getPassword() {
-        return password;
+    public String getUsername() {
+        return email;
     }
 
     @Override
@@ -97,5 +104,9 @@ public class Merchant implements UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+    public Long getId() {
+        return merchantId;
     }
 }

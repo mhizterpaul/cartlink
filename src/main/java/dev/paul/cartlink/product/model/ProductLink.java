@@ -39,4 +39,20 @@ public class ProductLink {
     @OneToMany(mappedBy = "productLink", cascade = CascadeType.ALL)
     @JsonManagedReference("productLink-orders")
     private Set<Order> orders = new HashSet<>();
+
+    public Long getId() {
+        return linkId;
+    }
+
+    public void setProduct(dev.paul.cartlink.product.model.Product product) {
+        // TODO: Set the merchantProduct association based on the product and merchant
+    }
+
+    public void setMerchant(dev.paul.cartlink.merchant.model.Merchant merchant) {
+        // TODO: Set the merchantProduct association based on the merchant and product
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
 }

@@ -2,8 +2,8 @@ package dev.mhizterpaul.cartlink.integration.product; // Controller is in produc
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 // DTOs likely in customer.dto or common, as service is in customer.service
-import dev.paul.cartlink.customer.dto.RefundRequestDto; // Placeholder
-import dev.paul.cartlink.customer.dto.RefundResponseDto; // Placeholder
+import dev.paul.cartlink.customer.dto.RefundRequest; // Placeholder
+import dev.paul.cartlink.customer.dto.RefundResponse; // Placeholder
 
 // For test data setup
 import dev.paul.cartlink.merchant.model.Merchant;
@@ -39,19 +39,25 @@ import java.util.Collections;
 @DisplayName("Refund Management API Integration Tests (product.RefundController)")
 public class RefundControllerIT {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private MerchantRepository merchantRepository;
-    @Autowired private CustomerRepository customerRepository;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private MerchantRepository merchantRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
 
-    private String testCustomerId;
-    private String testOrderId;
+    private Long testCustomerId;
+    private Long testOrderId;
     private MockCookie customerSessionCookie;
 
     @BeforeEach
     void setUpTestData() {
-        Merchant merchant = merchantRepository.save(new Merchant("refund-merchant" + System.currentTimeMillis() + "@example.com", "Pass", "RefundM", "LTD"));
+        Merchant merchant = merchantRepository.save(new Merchant(
+                "refund-merchant" + System.currentTimeMillis() + "@example.com", "Pass", "RefundM", "LTD"));
         Customer customer = new Customer();
         customer.setEmail("refundcust" + System.currentTimeMillis() + "@example.com");
         Customer savedCustomer = customerRepository.save(customer);
@@ -75,17 +81,25 @@ public class RefundControllerIT {
         @Test
         @DisplayName("Should allow authenticated customer to submit a refund request for their order")
         void whenValidRefundRequest_thenSubmitsSuccessfully() throws Exception {
-            RefundRequestDto refundRequestDto = new RefundRequestDto("Item defective");
+            RefundRequest refundRequest = new RefundRequest(
+                    testOrderId, // orderId from created order
+                    "Item defective", // reason
+                    30.00, // amount (matches order amount)
+                    "1234567890", // accountNumber (dummy)
+                    "Test Bank", // bankName (dummy)
+                    "John Doe" // accountName (dummy)
+            );
 
             mockMvc.perform(post("/api/v1/customers/orders/{orderId}/refund", testOrderId)
                     .cookie(customerSessionCookie)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refundRequestDto)))
+                    .content(objectMapper.writeValueAsString(refundRequest)))
                     .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.id").exists()) // Assuming response is RefundResponseDto with an id
+                    .andExpect(jsonPath("$.id").exists())
                     .andExpect(jsonPath("$.reason").value("Item defective"));
         }
-        // Add 400 (invalid data), 401 (not auth), 403 (not owner), 404 (order not found) tests
+        // Add 400 (invalid data), 401 (not auth), 403 (not owner), 404 (order not
+        // found) tests
     }
 
     @Nested
@@ -95,11 +109,17 @@ public class RefundControllerIT {
         @DisplayName("Should retrieve all refund requests for the authenticated customer")
         void whenAuthenticated_thenReturnsCustomerRefunds() throws Exception {
             // Submit a refund request first
-            RefundRequestDto refundRequestDto = new RefundRequestDto("Another reason");
+            RefundRequest refundRequest = new RefundRequest(
+                    testOrderId,
+                    "Another reason",
+                    30.00,
+                    "1234567890",
+                    "Test Bank",
+                    "John Doe");
             mockMvc.perform(post("/api/v1/customers/orders/{orderId}/refund", testOrderId)
                     .cookie(customerSessionCookie)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refundRequestDto)))
+                    .content(objectMapper.writeValueAsString(refundRequest)))
                     .andExpect(status().isCreated());
 
             mockMvc.perform(get("/api/v1/customers/orders/refunds")
@@ -116,11 +136,17 @@ public class RefundControllerIT {
         @Test
         @DisplayName("Should retrieve refunds for a specific order by authenticated customer")
         void whenAuthenticatedAndOrderExists_thenReturnsOrderRefunds() throws Exception {
-            RefundRequestDto refundRequestDto = new RefundRequestDto("Order specific refund reason");
-             mockMvc.perform(post("/api/v1/customers/orders/{orderId}/refund", testOrderId)
+            RefundRequest refundRequest = new RefundRequest(
+                    testOrderId,
+                    "Order specific refund reason",
+                    30.00,
+                    "1234567890",
+                    "Test Bank",
+                    "John Doe");
+            mockMvc.perform(post("/api/v1/customers/orders/{orderId}/refund", testOrderId)
                     .cookie(customerSessionCookie)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(refundRequestDto)))
+                    .content(objectMapper.writeValueAsString(refundRequest)))
                     .andExpect(status().isCreated());
 
             mockMvc.perform(get("/api/v1/customers/orders/{orderId}/refunds", testOrderId)
@@ -135,5 +161,6 @@ public class RefundControllerIT {
     // - Targets dev.paul.cartlink.product.controller.RefundController.
     // - Mocks dev.paul.cartlink.customer.service.RefundService.
     // - Uses repositories for Merchant, Customer, Order setup.
-    // - Placeholder DTOs (RefundRequestDto, RefundResponseDto) used, likely from customer.dto.
+    // - Placeholder DTOs (RefundRequestDto, RefundResponseDto) used, likely from
+    // customer.dto.
 }

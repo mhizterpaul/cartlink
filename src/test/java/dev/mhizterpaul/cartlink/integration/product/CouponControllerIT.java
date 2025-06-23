@@ -6,10 +6,10 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 // Placeholder imports as actual controller/service for coupons were not explicitly found.
 // Assuming they would reside in product package if created.
 import dev.paul.cartlink.product.controller.CouponController; // Placeholder
-import dev.paul.cartlink.product.dto.CouponCreateRequest;    // Placeholder
-import dev.paul.cartlink.product.dto.CouponIdResponse;        // Placeholder
-import dev.paul.cartlink.product.dto.CouponDetailsResponse;  // Placeholder
-import dev.paul.cartlink.dto.response.SimpleSuccessResponse;  // Common Placeholder
+import dev.paul.cartlink.product.dto.CouponCreateRequest; // Placeholder
+import dev.paul.cartlink.product.dto.CouponIdResponse; // Placeholder
+import dev.paul.cartlink.product.dto.CouponDetailsResponse; // Placeholder
+import dev.paul.cartlink.product.dto.ProductResponse; // Corrected import
 
 // For test data setup
 import dev.paul.cartlink.merchant.model.Merchant;
@@ -45,28 +45,35 @@ import java.util.Collections;
 @DisplayName("Coupon Management API Integration Tests")
 public class CouponControllerIT {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper; // Already configured with JavaTimeModule by Spring Boot
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper; // Already configured with JavaTimeModule by Spring Boot
 
-    @Autowired private MerchantRepository merchantRepository;
-    @Autowired private ProductRepository productRepository;
-    @Autowired private CouponRepository couponRepository; // Assuming this exists
+    @Autowired
+    private MerchantRepository merchantRepository;
+    @Autowired
+    private ProductRepository productRepository;
+    @Autowired
+    private CouponRepository couponRepository; // Assuming this exists
 
-    private String testMerchantId;
-    private String testProductId;
-    private String testCouponId;
+    private Long testMerchantId;
+    private Long testProductId;
+    private Long testCouponId;
 
     @BeforeEach
     void setUpTestData() {
-        objectMapper.registerModule(new JavaTimeModule()); // Ensure for local objectMapper if not relying on Spring's global one
+        objectMapper.registerModule(new JavaTimeModule()); // Ensure for local objectMapper if not relying on Spring's
+                                                           // global one
 
-        Merchant merchant = new Merchant("coupon-merchant" + System.currentTimeMillis() + "@example.com", "Pass", "CouponM", "LTD");
+        Merchant merchant = new Merchant("coupon-merchant" + System.currentTimeMillis() + "@example.com", "Pass",
+                "CouponM", "LTD");
         Merchant savedMerchant = merchantRepository.save(merchant);
         testMerchantId = savedMerchant.getId();
 
         Product product = new Product();
         product.setName("Coupon Product");
-        product.setPrice(BigDecimal.valueOf(100.00));
+        product.setPrice(100.00);
         product.setStock(10);
         product.setMerchant(savedMerchant);
         Product savedProduct = productRepository.save(product);
@@ -76,7 +83,7 @@ public class CouponControllerIT {
         Coupon coupon = new Coupon();
         coupon.setProduct(savedProduct);
         coupon.setMerchant(savedMerchant);
-        coupon.setDiscount(BigDecimal.valueOf(10.0)); // Assuming discount is BigDecimal
+        coupon.setDiscount(10.0); // Assuming discount is BigDecimal
         coupon.setValidFrom(LocalDateTime.now().minusDays(1).toInstant(ZoneOffset.UTC));
         coupon.setValidUntil(LocalDateTime.now().plusDays(10).toInstant(ZoneOffset.UTC));
         coupon.setMaxUsage(100);
@@ -87,22 +94,22 @@ public class CouponControllerIT {
 
     @Nested
     @DisplayName("POST /api/v1/merchants/{merchantId}/products/{productId}/coupons")
-    @WithMockUser(username = "test-coupon-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-coupon-merchant", roles = { "MERCHANT" })
     class CreateCoupon {
         @Test
         @DisplayName("Should create a new coupon for a product and return 201 Created")
         void whenValidCouponData_thenCreatesCoupon() throws Exception {
             CouponCreateRequest request = new CouponCreateRequest(
-                15.0,
-                "2024-09-01T00:00:00Z",
-                "2024-09-30T23:59:59Z",
-                200,
-                50
-            );
+                    15.0,
+                    "2024-09-01T00:00:00Z",
+                    "2024-09-30T23:59:59Z",
+                    200,
+                    50);
 
-            mockMvc.perform(post("/api/v1/merchants/{merchantId}/products/{productId}/coupons", testMerchantId, testProductId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(objectMapper.writeValueAsString(request)))
+            mockMvc.perform(
+                    post("/api/v1/merchants/{merchantId}/products/{productId}/coupons", testMerchantId, testProductId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.couponId").exists());
         }
@@ -110,34 +117,38 @@ public class CouponControllerIT {
 
     @Nested
     @DisplayName("GET /api/v1/merchants/{merchantId}/products/{productId}/coupons")
-    @WithMockUser(username = "test-coupon-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-coupon-merchant", roles = { "MERCHANT" })
     class GetCouponsForProduct {
         @Test
         @DisplayName("Should retrieve coupons for a specific product")
         void whenProductHasCoupons_thenReturnsCouponList() throws Exception {
-            mockMvc.perform(get("/api/v1/merchants/{merchantId}/products/{productId}/coupons", testMerchantId, testProductId))
+            mockMvc.perform(
+                    get("/api/v1/merchants/{merchantId}/products/{productId}/coupons", testMerchantId, testProductId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$").isArray())
-                    .andExpect(jsonPath("$[0].couponId").value(testCouponId)); // Assuming the pre-created coupon is listed
+                    .andExpect(jsonPath("$[0].couponId").value(testCouponId)); // Assuming the pre-created coupon is
+                                                                               // listed
         }
     }
 
     @Nested
     @DisplayName("DELETE /api/v1/merchants/{merchantId}/products/coupons/{couponId}")
-    @WithMockUser(username = "test-coupon-merchant", roles = {"MERCHANT"})
+    @WithMockUser(username = "test-coupon-merchant", roles = { "MERCHANT" })
     class DeleteCoupon {
         @Test
         @DisplayName("Should delete an existing coupon and return 200 OK")
         void whenCouponExists_thenDeletesCoupon() throws Exception {
-            mockMvc.perform(delete("/api/v1/merchants/{merchantId}/products/coupons/{couponId}", testMerchantId, testCouponId))
+            mockMvc.perform(
+                    delete("/api/v1/merchants/{merchantId}/products/coupons/{couponId}", testMerchantId, testCouponId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true));
         }
     }
 
     // --- Notes on CouponControllerIT ---
-    // - Assumes CouponController, CouponService, Coupon model, CouponRepository, and DTOs exist.
-    //   These are placeholders as they were not found in the initial 'ls'.
+    // - Assumes CouponController, CouponService, Coupon model, CouponRepository,
+    // and DTOs exist.
+    // These are placeholders as they were not found in the initial 'ls'.
     // - Test data setup includes creating a Merchant, Product, and a Coupon.
     // - Uses @WithMockUser for merchant authentication.
 }

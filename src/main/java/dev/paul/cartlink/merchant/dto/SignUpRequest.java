@@ -40,4 +40,13 @@ public class SignUpRequest {
         private String middleName;
         private String phoneNumber;
         private String type; // "MERCHANT" or "CUSTOMER"
+        private String image;
+
+        public SignUpRequest(String email, String password, String firstName, String lastName, String image) {
+                this.email = email;
+                this.password = password;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.image = image;
+        }
 }

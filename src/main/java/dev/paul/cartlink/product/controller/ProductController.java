@@ -28,8 +28,6 @@ public class ProductController {
         try {
             Product product = new Product();
             product.setName((String) request.get("name"));
-            product.setModel((String) request.get("model"));
-            product.setManufacturer((String) request.get("manufacturer"));
             product.setDescription((String) request.get("description"));
             product.setSpecifications((Map<String, String>) request.get("specifications"));
 
@@ -57,8 +55,6 @@ public class ProductController {
         try {
             Product product = new Product();
             product.setName((String) request.get("name"));
-            product.setModel((String) request.get("model"));
-            product.setManufacturer((String) request.get("manufacturer"));
             product.setDescription((String) request.get("description"));
             product.setSpecifications((Map<String, String>) request.get("specifications"));
 

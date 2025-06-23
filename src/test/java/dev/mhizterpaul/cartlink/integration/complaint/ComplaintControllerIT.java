@@ -14,7 +14,6 @@ import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.order.model.OrderStatus;
 
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,19 +39,25 @@ import java.util.Collections;
 @DisplayName("Complaint Handling API Integration Tests")
 public class ComplaintControllerIT {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private OrderRepository orderRepository;
-    @Autowired private MerchantRepository merchantRepository;
-    @Autowired private CustomerRepository customerRepository;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private OrderRepository orderRepository;
+    @Autowired
+    private MerchantRepository merchantRepository;
+    @Autowired
+    private CustomerRepository customerRepository;
 
-    private String testCustomerId;
-    private String testOrderId;
+    private Long testCustomerId;
+    private Long testOrderId;
     private MockCookie customerSessionCookie;
 
     @BeforeEach
     void setUpTestData() {
-        Merchant merchant = merchantRepository.save(new Merchant("complaint-merchant" + System.currentTimeMillis() + "@example.com", "Pass", "CompM", "LTD"));
+        Merchant merchant = merchantRepository.save(new Merchant(
+                "complaint-merchant" + System.currentTimeMillis() + "@example.com", "Pass", "CompM", "LTD"));
         Customer customer = new Customer();
         customer.setEmail("complaintcust" + System.currentTimeMillis() + "@example.com");
         Customer savedCustomer = customerRepository.save(customer);
@@ -76,7 +81,8 @@ public class ComplaintControllerIT {
         @Test
         @DisplayName("Should allow authenticated customer to submit a complaint for their order")
         void whenValidComplaint_thenSubmitsSuccessfully() throws Exception {
-            ComplaintRequest complaintRequest = new ComplaintRequest("Item Damaged", "The item arrived broken.", "Product Quality");
+            ComplaintRequest complaintRequest = new ComplaintRequest("Item Damaged", "The item arrived broken.",
+                    "Product Quality");
 
             mockMvc.perform(post("/api/v1/customers/orders/{orderId}/complaint", testOrderId)
                     .cookie(customerSessionCookie)
@@ -86,7 +92,8 @@ public class ComplaintControllerIT {
                     .andExpect(jsonPath("$.id").exists()) // Assuming response includes complaint ID
                     .andExpect(jsonPath("$.title").value("Item Damaged"));
         }
-        // Add 400 (invalid data), 401 (not auth), 403 (not owner of order), 404 (order not found) tests
+        // Add 400 (invalid data), 401 (not auth), 403 (not owner of order), 404 (order
+        // not found) tests
     }
 
     @Nested
@@ -117,7 +124,8 @@ public class ComplaintControllerIT {
         @Test
         @DisplayName("Should retrieve complaints for a specific order by authenticated customer")
         void whenAuthenticatedAndOrderExists_thenReturnsOrderComplaints() throws Exception {
-             ComplaintRequest complaintRequest = new ComplaintRequest("Order Specific Complaint", "Details here.", "Order Issue");
+            ComplaintRequest complaintRequest = new ComplaintRequest("Order Specific Complaint", "Details here.",
+                    "Order Issue");
             mockMvc.perform(post("/api/v1/customers/orders/{orderId}/complaint", testOrderId)
                     .cookie(customerSessionCookie)
                     .contentType(MediaType.APPLICATION_JSON)

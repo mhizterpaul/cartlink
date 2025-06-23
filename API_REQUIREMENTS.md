@@ -118,7 +118,7 @@ Customers are tracked via **cookies**.
 }
 ```
 
-* `201 Created`: JWT token and customer details
+* `201 Created`: customer details
 * `400 Bad Request`
 
 #### 2. Update Customer Profile

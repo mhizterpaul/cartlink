@@ -88,6 +88,10 @@ public class Customer implements UserDetails {
         return email;
     }
 
+    public Long getId() {
+        return customerId;
+    }
+
     @Override
     public String getPassword() {
         return null;

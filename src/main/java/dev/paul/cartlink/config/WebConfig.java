@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.lang.NonNull;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Bean;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -26,5 +28,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*") // Allow all headers (e.g., Content-Type, Authorization)
                 .allowCredentials(true) // Allow sending cookies/auth headers
                 .maxAge(3600); // Cache preflight requests for 1 hour
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
