@@ -1,17 +1,8 @@
 package dev.paul.cartlink.config;
 
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
-import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.proc.SecurityContext;
-
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.repository.CustomerRepository;
 import dev.paul.cartlink.merchant.dto.SignUpRequest;
-import dev.paul.cartlink.merchant.dto.LoginRequest;
-import dev.paul.cartlink.merchant.dto.AuthResponse;
 import dev.paul.cartlink.merchant.dto.Type;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.model.Wallet;
@@ -27,17 +18,6 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,30 +42,6 @@ public class SecurityService implements UserDetailsService {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
-    private RSAPrivateKey loadPrivateKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        String privateKeyPEM = new String(Files.readAllBytes(Paths.get(privateKeyPath)))
-                .replace("-----BEGIN PRIVATE KEY-----", "")
-                .replace("-----END PRIVATE KEY-----", "")
-                .replaceAll("\\s", "");
-
-        byte[] encoded = Base64.getDecoder().decode(privateKeyPEM);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
-        return (RSAPrivateKey) keyFactory.generatePrivate(keySpec);
-    }
-
-    private RSAPublicKey loadPublicKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        String publicKeyPEM = new String(Files.readAllBytes(Paths.get(publicKeyPath)))
-                .replace("-----BEGIN PUBLIC KEY-----", "")
-                .replace("-----END PUBLIC KEY-----", "")
-                .replaceAll("\\s", "");
-
-        byte[] encoded = Base64.getDecoder().decode(publicKeyPEM);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(encoded);
-        return (RSAPublicKey) keyFactory.generatePublic(keySpec);
-    }
-
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -104,14 +60,6 @@ public class SecurityService implements UserDetailsService {
 
     public String generateToken(UserDetails userDetails) {
         try {
-            RSAPrivateKey privateKey = loadPrivateKey();
-            RSAPublicKey publicKey = loadPublicKey();
-
-            JWK jwk = new RSAKey.Builder(publicKey)
-                    .privateKey(privateKey)
-                    .build();
-
-            JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
 
             Map<String, Object> claims = new HashMap<>();
             if (userDetails instanceof Merchant merchant) {

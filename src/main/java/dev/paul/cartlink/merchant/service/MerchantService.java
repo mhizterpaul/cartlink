@@ -29,7 +29,6 @@ import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Comparator;
-import java.time.LocalDateTime;
 
 @Service
 public class MerchantService {
@@ -132,10 +131,6 @@ public class MerchantService {
             throw new IllegalArgumentException("Email is required");
         }
 
-        Merchant merchant = merchantRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Email not found"));
-
-        String resetToken = UUID.randomUUID().toString();
         // TODO: Send reset token via email
     }
 

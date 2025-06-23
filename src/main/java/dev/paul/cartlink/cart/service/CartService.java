@@ -4,7 +4,6 @@ import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.cart.model.CartItem;
 import dev.paul.cartlink.cart.repository.CartRepository;
 import dev.paul.cartlink.cart.repository.CartItemRepository;
-import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductLink;
 import dev.paul.cartlink.product.repository.ProductLinkRepository;
 import dev.paul.cartlink.customer.model.Customer;

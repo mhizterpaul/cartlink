@@ -9,9 +9,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.order.model.Order;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
-import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 

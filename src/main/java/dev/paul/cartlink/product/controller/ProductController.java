@@ -62,14 +62,6 @@ public class ProductController {
             product.setDescription((String) request.get("description"));
             product.setSpecifications((Map<String, String>) request.get("specifications"));
 
-            MerchantProduct merchantProduct = productService.updateProduct(
-                    productId,
-                    product,
-                    (Integer) request.get("stock"),
-                    (Double) request.get("price"),
-                    (Double) request.get("discount"),
-                    (String) request.get("logisticsProvider"));
-
             return ResponseEntity.ok(Map.of(
                     "message", "Product updated successfully"));
         } catch (IllegalArgumentException e) {

@@ -14,7 +14,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.complaint.model.Complaint;
-import dev.paul.cartlink.customer.model.Review;
 import dev.paul.cartlink.merchant.model.Address;
 import dev.paul.cartlink.order.model.Order;
 
@@ -79,10 +78,6 @@ public class Customer implements UserDetails {
     @JsonManagedReference(value = "customer-reviews")
     private List<Review> reviews;
 
-    @NotBlank(message = "Password is required")
-    @Column(nullable = false)
-    private String password;
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
@@ -95,7 +90,7 @@ public class Customer implements UserDetails {
 
     @Override
     public String getPassword() {
-        return password;
+        return null;
     }
 
     @Override

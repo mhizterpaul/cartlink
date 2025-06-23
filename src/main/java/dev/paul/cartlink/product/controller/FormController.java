@@ -11,10 +11,9 @@ import dev.paul.cartlink.product.service.FormService;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Controller
-@RequestMapping("/merchant/form")
+@RequestMapping("/product/form")
 public class FormController {
 
     @Autowired
@@ -26,12 +25,12 @@ public class FormController {
 
         if (formData.isEmpty() || formData.get("product") == null) {
             // Product not found or error in service
-            return new ModelAndView("redirect:/merchant/products?error=productNotFound"); // Example redirect
+            return new ModelAndView("redirect:/product/products?error=productNotFound"); // Example redirect
         }
 
         model.addAllAttributes(formData); // Add all data from service (product, missingFields, banner) to model
 
-        return new ModelAndView("merchant/form/editProductForm.jte", model.asMap());
+        return new ModelAndView("product/form/editProductForm.jte", model.asMap());
     }
 
     @PostMapping("/{productId}")
@@ -54,15 +53,15 @@ public class FormController {
         try {
             formService.updateProductWithAdditionalFields(productId, specificationsToUpdate);
             redirectAttributes.addFlashAttribute("successMessage", "Product updated successfully!");
-            return "redirect:/merchant/product/" + productId; // Adjust to your product view page
+            return "redirect:/product/product/" + productId; // Adjust to your product view page
         } catch (IllegalArgumentException e) {
             // Log error e.g., e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "Error updating product: " + e.getMessage());
-            return "redirect:/merchant/form/" + productId; // Show form again with error
+            return "redirect:/product/form/" + productId; // Show form again with error
         } catch (Exception e) {
             // Log error e.g., e.printStackTrace();
             redirectAttributes.addFlashAttribute("errorMessage", "An unexpected error occurred.");
-            return "redirect:/merchant/form/" + productId; // Show form again
+            return "redirect:/product/form/" + productId; // Show form again
         }
     }
 }

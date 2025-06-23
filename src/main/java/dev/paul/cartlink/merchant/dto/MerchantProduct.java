@@ -11,8 +11,6 @@ import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.model.ProductLink;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 

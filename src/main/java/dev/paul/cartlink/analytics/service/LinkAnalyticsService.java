@@ -87,7 +87,6 @@ public class LinkAnalyticsService {
     private boolean isMerchantRequest(HttpServletRequest request) {
         // Check if the request is coming from the merchant's domain or IP
         String referer = request.getHeader("Referer");
-        String host = request.getHeader("Host");
 
         // Add your merchant domain/IP checks here
         return referer != null && (referer.contains("merchant.cartlink.com") ||

@@ -26,4 +26,7 @@ jwt:
 
 rsa:
   private-key: ${user.home}/.cartlink/certs/private.pem
-  public-key: ${user.home}/.cartlink/certs/public.pem 
+  public-key: ${user.home}/.cartlink/certs/public.pem
+
+jte:
+  developmentMode: true

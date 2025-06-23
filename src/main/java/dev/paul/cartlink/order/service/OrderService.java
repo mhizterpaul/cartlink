@@ -4,8 +4,6 @@ import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.customer.model.Customer;
-import dev.paul.cartlink.cart.model.Cart;
-import dev.paul.cartlink.cart.model.CartItem;
 import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.product.model.ProductLink;

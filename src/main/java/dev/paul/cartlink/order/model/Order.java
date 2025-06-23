@@ -12,7 +12,6 @@ import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.product.model.ProductLink;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;

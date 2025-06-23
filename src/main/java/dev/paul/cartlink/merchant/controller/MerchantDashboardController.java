@@ -8,7 +8,6 @@ import dev.paul.cartlink.merchant.service.MerchantService;
 
 import org.springframework.http.ResponseEntity;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.List;
 
 @RestController
