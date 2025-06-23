@@ -1,7 +1,7 @@
-package dev.paul.cartlink.analytics.service;
+package dev.paul.cartlink.link.service;
 
-import dev.paul.cartlink.analytics.model.LinkAnalytics;
-import dev.paul.cartlink.analytics.repository.LinkAnalyticsRepository;
+import dev.paul.cartlink.link.model.LinkAnalytics;
+import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
 import dev.paul.cartlink.product.model.ProductLink;
 import dev.paul.cartlink.product.repository.ProductLinkRepository;
 import jakarta.servlet.http.HttpServletRequest;

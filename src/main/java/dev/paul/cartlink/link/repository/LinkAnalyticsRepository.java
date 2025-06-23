@@ -1,6 +1,6 @@
-package dev.paul.cartlink.analytics.repository;
+package dev.paul.cartlink.link.repository;
 
-import dev.paul.cartlink.analytics.model.LinkAnalytics;
+import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.product.model.ProductLink;
 
 import org.springframework.data.jpa.repository.JpaRepository;

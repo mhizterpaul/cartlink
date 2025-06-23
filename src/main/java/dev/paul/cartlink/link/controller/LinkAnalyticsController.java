@@ -1,11 +1,11 @@
-package dev.paul.cartlink.analytics.controller;
+package dev.paul.cartlink.link.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import dev.paul.cartlink.analytics.model.LinkAnalytics;
-import dev.paul.cartlink.analytics.service.LinkAnalyticsService;
+import dev.paul.cartlink.link.model.LinkAnalytics;
+import dev.paul.cartlink.link.service.LinkAnalyticsService;
 
 import java.util.List;
 

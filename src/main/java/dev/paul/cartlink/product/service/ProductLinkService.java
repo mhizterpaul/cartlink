@@ -1,7 +1,7 @@
 package dev.paul.cartlink.product.service;
 
-import dev.paul.cartlink.analytics.model.LinkAnalytics;
-import dev.paul.cartlink.analytics.repository.LinkAnalyticsRepository;
+import dev.paul.cartlink.link.model.LinkAnalytics;
+import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
 import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.product.model.ProductLink;

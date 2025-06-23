@@ -1,6 +1,6 @@
 package dev.paul.cartlink.product.controller;
 
-import dev.paul.cartlink.analytics.model.LinkAnalytics;
+import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.product.model.ProductLink;

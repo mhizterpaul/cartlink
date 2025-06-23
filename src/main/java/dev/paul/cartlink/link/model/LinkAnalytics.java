@@ -1,4 +1,4 @@
-package dev.paul.cartlink.analytics.model;
+package dev.paul.cartlink.link.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

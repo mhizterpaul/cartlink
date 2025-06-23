@@ -163,7 +163,7 @@ Customers are tracked via **cookies**.
   "coupon": number[],
   "productDetails": {},
   "merchantId": "string",
-  "customers": []
+  "customers": Customer[]
 }
 ```
 

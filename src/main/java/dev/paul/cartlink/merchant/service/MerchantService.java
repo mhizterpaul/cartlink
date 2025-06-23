@@ -2,8 +2,8 @@ package dev.paul.cartlink.merchant.service;
 
 import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.repository.OrderRepository;
-import dev.paul.cartlink.analytics.model.LinkAnalytics;
-import dev.paul.cartlink.analytics.repository.LinkAnalyticsRepository;
+import dev.paul.cartlink.link.model.LinkAnalytics;
+import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
 import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.complaint.repository.ComplaintRepository;
 import dev.paul.cartlink.config.SecurityService;
