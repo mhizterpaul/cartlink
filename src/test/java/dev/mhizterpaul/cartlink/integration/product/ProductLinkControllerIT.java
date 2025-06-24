@@ -1,8 +1,6 @@
 package dev.mhizterpaul.cartlink.integration.product;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-// Assuming DTOs like GeneratedLinkResponse are in dev.paul.cartlink.product.dto or common
-import dev.paul.cartlink.product.dto.GeneratedLinkResponse; // Placeholder
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // For BDT setup: Potentially create a product first to generate a link for it
 import dev.paul.cartlink.product.model.Product; // Actual model
 import dev.paul.cartlink.product.repository.ProductRepository; // Actual repository
+import dev.paul.cartlink.link.dto.GeneratedLinkResponse;
 import dev.paul.cartlink.merchant.model.Merchant; // Actual model
 import dev.paul.cartlink.merchant.repository.MerchantRepository; // Actual repository
 

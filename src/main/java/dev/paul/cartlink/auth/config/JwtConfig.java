@@ -1,4 +1,4 @@
-package dev.paul.cartlink.config;
+package dev.paul.cartlink.auth.config;
 
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -12,6 +12,8 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+
+import dev.paul.cartlink.security.RsaKeyProperties;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;

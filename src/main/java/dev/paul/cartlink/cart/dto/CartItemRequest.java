@@ -1,23 +1,23 @@
 package dev.paul.cartlink.cart.dto;
 
 public class CartItemRequest {
-    private Long productId;
+    private Long merchantProductId;
     private int quantity;
 
     public CartItemRequest() {
     }
 
     public CartItemRequest(Long productId, int quantity) {
-        this.productId = productId;
+        this.merchantProductId = productId;
         this.quantity = quantity;
     }
 
-    public Long getProductId() {
-        return productId;
+    public Long getMerchantProductId() {
+        return merchantProductId;
     }
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
+    public void setProductId(Long merchantProductId) {
+        this.merchantProductId = merchantProductId;
     }
 
     public int getQuantity() {

@@ -4,21 +4,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 // Assuming DTOs like LinkAnalyticsResponse, LinkTrafficSourceResponse are in dev.paul.cartlink.analytics.dto or common
 import dev.paul.cartlink.link.dto.LinkAnalyticsResponse; // Placeholder
 import dev.paul.cartlink.link.dto.LinkTrafficSourceResponse; // Placeholder
-
+import dev.paul.cartlink.link.model.ProductLink;
+import dev.paul.cartlink.link.repository.LinkRepository;
 // For BDT setup: Potentially create a product and product link first
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
-import dev.paul.cartlink.product.model.ProductLink; // Assuming this model exists for product links
-import dev.paul.cartlink.product.repository.ProductLinkRepository; // Assuming this repository exists
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,7 +43,7 @@ public class LinkAnalyticsControllerIT {
     @Autowired
     private MerchantRepository merchantRepository;
     @Autowired
-    private ProductLinkRepository productLinkRepository; // Assuming this exists
+    private LinkRepository productLinkRepository; // Assuming this exists
 
     private Long testMerchantId;
     private Long testProductId;

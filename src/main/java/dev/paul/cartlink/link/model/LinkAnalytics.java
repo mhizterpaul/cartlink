@@ -2,34 +2,47 @@ package dev.paul.cartlink.link.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
 
 import java.time.LocalDateTime;
-
-import dev.paul.cartlink.product.model.ProductLink;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 @Entity
 @Table(name = "link_analytics")
 public class LinkAnalytics {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long analyticsId;
 
-    @ManyToOne
-    @JoinColumn(name = "product_link_id", nullable = false)
-    private ProductLink productLink;
-
-    private String source; // e.g., "facebook", "instagram", "direct"
-    private String device; // e.g., "mobile", "desktop", "tablet"
-    private String location; // e.g., "US", "UK", "NG"
-    private String ipAddress;
-    private String userAgent;
-    private Long timeSpent; // Time spent on page in seconds
+    @Column(nullable = false)
+    private Integer totalUniqueClicks = 0;
 
     @Column(nullable = false)
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private Integer totalUniqueMobile = 0;
+
+    @Column(nullable = false)
+    private Integer totalUniqueDesktops = 0;
+
+    @ManyToMany
+    @JoinTable(name = "link_analytics_products", joinColumns = @JoinColumn(name = "analyticsId"), inverseJoinColumns = @JoinColumn(name = "id"))
+    private List<MerchantProduct> merchantProducts;
+
+    @ElementCollection
+    @CollectionTable(name = "link_analytics_sources", joinColumns = @JoinColumn(name = "analytics_id"))
+    @MapKeyColumn(name = "source")
+    @Column(name = "clicks")
+    private Map<String, Integer> uniqueSourceClicks = new HashMap<>();
+
+    private String geolocation;
+
+    private Double bounceRate;
+
+    private Long averageTimeSpent; // in seconds
+
+    @Column(nullable = false)
+    private LocalDateTime lastUpdated = LocalDateTime.now();
 }

@@ -5,11 +5,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import dev.paul.cartlink.customer.model.Customer;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -19,16 +21,19 @@ import java.util.List;
 public class Cart {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long cartId;
+    private Long id;
+
+    @Column(unique = true)
+    private String cookieId;
 
     @OneToOne
-    @JoinColumn(name = "customer_id")
-    @JsonManagedReference
+    @JoinColumn(name = "customer_id", unique = true)
+    @JsonBackReference(value = "customer-cart")
     private Customer customer;
 
-    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<CartItem> items;
+    private Set<CartItem> items = new HashSet<>();
 
     @Column(nullable = false)
     private Double totalAmount;

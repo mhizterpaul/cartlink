@@ -1,16 +1,8 @@
-package dev.paul.cartlink.product.dto;
+package dev.paul.cartlink.link.dto;
 
-public class GeneratedLinkResponse {
+public class ProductLinkResponse {
     private Long linkId;
     private String url;
-
-    public GeneratedLinkResponse() {
-    }
-
-    public GeneratedLinkResponse(Long linkId, String url) {
-        this.linkId = linkId;
-        this.url = url;
-    }
 
     public Long getLinkId() {
         return linkId;
@@ -27,4 +19,5 @@ public class GeneratedLinkResponse {
     public void setUrl(String url) {
         this.url = url;
     }
+
 }

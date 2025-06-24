@@ -1,9 +1,16 @@
-package dev.paul.cartlink.product.dto;
+package dev.paul.cartlink.link.dto;
 
-public class ProductLinkResponse {
+public class GeneratedLinkResponse {
     private Long linkId;
     private String url;
-    private String qrCode;
+
+    public GeneratedLinkResponse() {
+    }
+
+    public GeneratedLinkResponse(Long linkId, String url) {
+        this.linkId = linkId;
+        this.url = url;
+    }
 
     public Long getLinkId() {
         return linkId;
@@ -19,13 +26,5 @@ public class ProductLinkResponse {
 
     public void setUrl(String url) {
         this.url = url;
-    }
-
-    public String getQrCode() {
-        return qrCode;
-    }
-
-    public void setQrCode(String qrCode) {
-        this.qrCode = qrCode;
     }
 }

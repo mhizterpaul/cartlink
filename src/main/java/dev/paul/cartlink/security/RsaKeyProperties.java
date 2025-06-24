@@ -1,4 +1,4 @@
-package dev.paul.cartlink.config;
+package dev.paul.cartlink.security;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;

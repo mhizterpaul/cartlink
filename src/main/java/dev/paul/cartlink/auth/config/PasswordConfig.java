@@ -1,4 +1,4 @@
-package dev.paul.cartlink.config;
+package dev.paul.cartlink.auth.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

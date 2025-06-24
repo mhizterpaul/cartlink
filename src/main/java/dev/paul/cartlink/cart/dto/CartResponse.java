@@ -1,9 +1,23 @@
 package dev.paul.cartlink.cart.dto;
 
+import dev.paul.cartlink.cart.model.Cart;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CartResponse {
     private List<Item> items;
+
+    public CartResponse() {
+    }
+
+    public CartResponse(Cart cart) {
+        this.items = cart.getItems().stream().map(item -> {
+            Item dto = new Item();
+            dto.setProductId(item.getProduct() != null ? String.valueOf(item.getProduct().getId()) : null);
+            dto.setQuantity(item.getQuantity());
+            return dto;
+        }).collect(Collectors.toList());
+    }
 
     public List<Item> getItems() {
         return items;

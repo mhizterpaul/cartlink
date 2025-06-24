@@ -11,4 +11,8 @@ import java.util.Optional;
 @Repository
 public interface CartRepository extends JpaRepository<Cart, Long> {
     Optional<Cart> findByCustomer(Customer customer);
+
+    Optional<Cart> findByCustomerId(Long customerId);
+
+    Optional<Cart> findByCookieId(String cookieId);
 }

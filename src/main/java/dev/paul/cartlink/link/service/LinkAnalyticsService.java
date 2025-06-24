@@ -2,108 +2,111 @@ package dev.paul.cartlink.link.service;
 
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
-import dev.paul.cartlink.product.model.ProductLink;
-import dev.paul.cartlink.product.repository.ProductLinkRepository;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import nl.basjes.parse.useragent.UserAgent;
 import nl.basjes.parse.useragent.UserAgentAnalyzer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class LinkAnalyticsService {
     private final LinkAnalyticsRepository linkAnalyticsRepository;
-    private final ProductLinkRepository productLinkRepository;
-    private final UserAgentAnalyzer uaAnalyzer;
 
-    public LinkAnalyticsService(LinkAnalyticsRepository linkAnalyticsRepository,
-            ProductLinkRepository productLinkRepository) {
+    public LinkAnalyticsService(LinkAnalyticsRepository linkAnalyticsRepository) {
         this.linkAnalyticsRepository = linkAnalyticsRepository;
-        this.productLinkRepository = productLinkRepository;
-        this.uaAnalyzer = UserAgentAnalyzer.newBuilder()
-                .withField("DeviceClass")
-                .withField("DeviceName")
-                .withField("DeviceBrand")
-                .withField("OperatingSystemName")
-                .withField("OperatingSystemVersion")
-                .build();
-    }
-
-    @Transactional
-    public void recordPageView(Long linkId, HttpServletRequest request, String source) {
-        // Skip if the request is from the merchant
-        if (isMerchantRequest(request)) {
-            return;
-        }
-
-        Optional<ProductLink> productLink = productLinkRepository.findById(linkId);
-        if (productLink.isEmpty()) {
-            return;
-        }
-
-        LinkAnalytics analytics = new LinkAnalytics();
-        analytics.setProductLink(productLink.get());
-        analytics.setSource(source);
-        analytics.setIpAddress(getClientIp(request));
-        analytics.setUserAgent(request.getHeader("User-Agent"));
-
-        // Parse user agent for device info
-        UserAgent userAgent = uaAnalyzer.parse(request.getHeader("User-Agent"));
-        String deviceInfo = String.format("%s %s %s",
-                userAgent.getValue("DeviceClass"),
-                userAgent.getValue("DeviceBrand"),
-                userAgent.getValue("DeviceName"));
-        analytics.setDevice(deviceInfo);
-        analytics.setLocation(getLocationFromIp(analytics.getIpAddress())); // You'll need to implement this
-
-        linkAnalyticsRepository.save(analytics);
-
-        // Update product link stats
-        ProductLink link = productLink.get();
-        link.setClicks(link.getClicks() + 1);
-        productLinkRepository.save(link);
-    }
-
-    @Transactional
-    public void recordTimeSpent(Long linkId, Long timeSpentSeconds) {
-        Optional<ProductLink> productLink = productLinkRepository.findById(linkId);
-        if (productLink.isEmpty()) {
-            return;
-        }
-
-        LinkAnalytics analytics = new LinkAnalytics();
-        analytics.setProductLink(productLink.get());
-        analytics.setTimeSpent(timeSpentSeconds);
-        linkAnalyticsRepository.save(analytics);
     }
 
     public List<LinkAnalytics> getAnalyticsForLink(Long linkId) {
         return linkAnalyticsRepository.findByProductLink_LinkId(linkId);
     }
 
-    private boolean isMerchantRequest(HttpServletRequest request) {
-        // Check if the request is coming from the merchant's domain or IP
-        String referer = request.getHeader("Referer");
-
-        // Add your merchant domain/IP checks here
-        return referer != null && (referer.contains("merchant.cartlink.com") ||
-                referer.contains("admin.cartlink.com"));
+    @Transactional
+    public void deleteAnalytics(Long analyticsId) {
+        linkAnalyticsRepository.deleteById(analyticsId);
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0];
+    public LinkAnalytics getAnalyticsById(Long analyticsId) {
+        return linkAnalyticsRepository.findById(analyticsId).orElse(null);
+    }
+
+    public List<LinkAnalytics> getAnalyticsByMerchantProductId(Long merchantProductId) {
+        return linkAnalyticsRepository.findAll().stream()
+                .filter(la -> la.getMerchantProducts().stream().anyMatch(mp -> mp.getId().equals(merchantProductId)))
+                .collect(Collectors.toList());
+    }
+
+    public List<LinkAnalytics> getAnalyticsByDateRange(java.time.LocalDateTime start, java.time.LocalDateTime end) {
+        return linkAnalyticsRepository.findAll().stream()
+                .filter(la -> la.getLastUpdated() != null && !la.getLastUpdated().isBefore(start)
+                        && !la.getLastUpdated().isAfter(end))
+                .collect(Collectors.toList());
+    }
+
+    public List<LinkAnalytics> getAnalyticsBySource(String source) {
+        return linkAnalyticsRepository.findAll().stream()
+                .filter(la -> la.getUniqueSourceClicks().containsKey(source))
+                .collect(Collectors.toList());
+    }
+
+    public void updateSourceClicks(Long analyticsId, String source, int clicks) {
+        LinkAnalytics analytics = linkAnalyticsRepository.findById(analyticsId).orElse(null);
+        if (analytics != null) {
+            analytics.getUniqueSourceClicks().put(source, clicks);
+            analytics.setLastUpdated(java.time.LocalDateTime.now());
+            linkAnalyticsRepository.save(analytics);
         }
-        return request.getRemoteAddr();
     }
 
-    private String getLocationFromIp(String ipAddress) {
-        // Implement IP geolocation here
-        // You can use a service like MaxMind GeoIP2 or IP-API
-        return "Unknown"; // Placeholder
+    // --- AGGREGATE ANALYTICS FOR API ---
+    public LinkStatsResponse getLinkStats(Long linkId, String startDate, String endDate) {
+        // For demo, just return total clicks and average time spent for all analytics
+        // for the link
+        List<LinkAnalytics> analyticsList = getAnalyticsForLink(linkId);
+        int totalClicks = analyticsList.stream().mapToInt(LinkAnalytics::getTotalUniqueClicks).sum();
+        double avgTime = analyticsList.stream().filter(a -> a.getAverageTimeSpent() != null)
+                .mapToLong(LinkAnalytics::getAverageTimeSpent).average().orElse(0);
+        return new LinkStatsResponse(totalClicks, avgTime);
     }
+
+    public static class LinkStatsResponse {
+        public int totalClicks;
+        public double averageTimeSpent;
+
+        public LinkStatsResponse(int totalClicks, double averageTimeSpent) {
+            this.totalClicks = totalClicks;
+            this.averageTimeSpent = averageTimeSpent;
+        }
+    }
+
+    // Traffic sources endpoint
+    public List<SourceClicks> getLinkTraffic(Long linkId) {
+        List<LinkAnalytics> analytics = getAnalyticsForLink(linkId);
+        java.util.Map<String, Integer> sourceClicks = new java.util.HashMap<>();
+        for (LinkAnalytics la : analytics) {
+            if (la.getUniqueSourceClicks() != null) {
+                la.getUniqueSourceClicks().forEach((src, count) -> sourceClicks.merge(src, count, Integer::sum));
+            }
+        }
+        return sourceClicks.entrySet().stream()
+                .map(e -> new SourceClicks(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    public static class SourceClicks {
+        public String source;
+        public int clicks;
+
+        public SourceClicks(String source, int clicks) {
+            this.source = source;
+            this.clicks = clicks;
+        }
+    }
+
 }

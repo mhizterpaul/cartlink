@@ -14,7 +14,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.complaint.model.Complaint;
-import dev.paul.cartlink.merchant.model.Address;
 import dev.paul.cartlink.order.model.Order;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
@@ -36,6 +35,26 @@ public class Customer implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long customerId;
 
+    @NotBlank(message = "Street is required")
+    @Column(nullable = false)
+    private String street;
+
+    @NotBlank(message = "City is required")
+    @Column(nullable = false)
+    private String city;
+
+    @NotBlank(message = "State is required")
+    @Column(nullable = false)
+    private String state;
+
+    @NotBlank(message = "Country is required")
+    @Column(nullable = false)
+    private String country;
+
+    @NotBlank(message = "Postal code is required")
+    @Column(nullable = false)
+    private String postalCode;
+
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required")
     @Column(nullable = false, unique = true)
@@ -52,11 +71,6 @@ public class Customer implements UserDetails {
     @NotBlank(message = "Phone number is required")
     @Column(nullable = false)
     private String phoneNumber;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "address_id")
-    @JsonManagedReference(value = "customer-address")
-    private Address address;
 
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
     @JsonManagedReference("customer-orders")

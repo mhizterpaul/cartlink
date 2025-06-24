@@ -1,7 +1,7 @@
 package dev.paul.cartlink.merchant.repository;
 
-import dev.paul.cartlink.merchant.dto.MerchantProduct;
 import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

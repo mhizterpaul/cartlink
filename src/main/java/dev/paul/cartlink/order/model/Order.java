@@ -8,8 +8,8 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.customer.model.Customer;
-import dev.paul.cartlink.merchant.dto.MerchantProduct;
-import dev.paul.cartlink.product.model.ProductLink;
+import dev.paul.cartlink.link.model.LinkAnalytics;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -40,7 +40,7 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "product_link_id")
     @JsonBackReference("productLink-orders")
-    private ProductLink productLink;
+    private LinkAnalytics linkAnalytics;
 
     private Integer quantity;
     private Double totalPrice;

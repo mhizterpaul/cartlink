@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class MerchantController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials, HttpServletRequest request) {
         try {
             logger.info("Login attempt for email: {}", credentials.get("email"));
 
@@ -55,7 +56,8 @@ public class MerchantController {
 
             String token = merchantService.login(
                     credentials.get("email"),
-                    credentials.get("password"));
+                    credentials.get("password"),
+                    request.getRemoteAddr());
 
             // Get merchant details
             Merchant merchant = merchantService.getMerchantByEmail(credentials.get("email"));

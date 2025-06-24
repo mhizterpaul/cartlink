@@ -1,5 +1,6 @@
-package dev.paul.cartlink.config;
+package dev.paul.cartlink.security.service;
 
+import dev.paul.cartlink.auth.TokenBlacklistService;
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.repository.CustomerRepository;
 import dev.paul.cartlink.merchant.dto.SignUpRequest;

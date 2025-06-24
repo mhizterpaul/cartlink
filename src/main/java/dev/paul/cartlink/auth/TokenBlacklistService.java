@@ -1,4 +1,4 @@
-package dev.paul.cartlink.config;
+package dev.paul.cartlink.auth;
 
 import org.springframework.stereotype.Service;
 import java.util.concurrent.ConcurrentHashMap;

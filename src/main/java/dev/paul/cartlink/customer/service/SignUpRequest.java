@@ -40,72 +40,62 @@ public class SignUpRequest {
         private String middleName;
         private String phoneNumber;
         private String type; // "MERCHANT" or "CUSTOMER"
-        private AddressDto address;
+        private String street;
+        private String city;
+        private String state;
+        private String country;
+        private String postalCode;
 
-        public SignUpRequest(String email, String firstName, String lastName, String phoneNumber, AddressDto address) {
+        public SignUpRequest(String email, String firstName, String lastName, String phoneNumber, String street,
+                        String city, String state, String country, String postalCode) {
                 this.email = email;
                 this.firstName = firstName;
                 this.lastName = lastName;
                 this.phoneNumber = phoneNumber;
-                this.address = address;
+                this.street = street;
+                this.city = city;
+                this.state = state;
+                this.country = country;
+                this.postalCode = postalCode;
         }
 
-        public static class AddressDto {
-                private String street;
-                private String city;
-                private String state;
-                private String country;
-                private String postalCode;
+        public String getStreet() {
+                return street;
+        }
 
-                public AddressDto() {
-                }
+        public void setStreet(String street) {
+                this.street = street;
+        }
 
-                public AddressDto(String street, String city, String state, String country, String postalCode) {
-                        this.street = street;
-                        this.city = city;
-                        this.state = state;
-                        this.country = country;
-                        this.postalCode = postalCode;
-                }
+        public String getCity() {
+                return city;
+        }
 
-                public String getStreet() {
-                        return street;
-                }
+        public void setCity(String city) {
+                this.city = city;
+        }
 
-                public void setStreet(String street) {
-                        this.street = street;
-                }
+        public String getState() {
+                return state;
+        }
 
-                public String getCity() {
-                        return city;
-                }
+        public void setState(String state) {
+                this.state = state;
+        }
 
-                public void setCity(String city) {
-                        this.city = city;
-                }
+        public String getCountry() {
+                return country;
+        }
 
-                public String getState() {
-                        return state;
-                }
+        public void setCountry(String country) {
+                this.country = country;
+        }
 
-                public void setState(String state) {
-                        this.state = state;
-                }
+        public String getPostalCode() {
+                return postalCode;
+        }
 
-                public String getCountry() {
-                        return country;
-                }
-
-                public void setCountry(String country) {
-                        this.country = country;
-                }
-
-                public String getPostalCode() {
-                        return postalCode;
-                }
-
-                public void setPostalCode(String postalCode) {
-                        this.postalCode = postalCode;
-                }
+        public void setPostalCode(String postalCode) {
+                this.postalCode = postalCode;
         }
 }

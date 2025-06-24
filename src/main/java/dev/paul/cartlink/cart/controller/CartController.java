@@ -1,63 +1,69 @@
 package dev.paul.cartlink.cart.controller;
 
+import dev.paul.cartlink.cart.dto.CartItemRequest;
+import dev.paul.cartlink.cart.dto.CartItemUpdateRequest;
+import dev.paul.cartlink.cart.dto.CartResponse;
+import dev.paul.cartlink.cart.model.Cart;
+import dev.paul.cartlink.cart.service.CartService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import dev.paul.cartlink.cart.service.CartService;
-import dev.paul.cartlink.customer.model.Customer;
-
-import java.util.Map;
+import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/customers/cart")
+@RequestMapping("/api/v1/customers/cart")
+@RequiredArgsConstructor
 public class CartController {
 
     private final CartService cartService;
 
-    public CartController(CartService cartService) {
-        this.cartService = cartService;
-    }
-
-    @PostMapping("/items")
-    public ResponseEntity<?> addToCart(@AuthenticationPrincipal Customer customer,
-            @RequestBody Map<String, Object> request) {
-        try {
-            Long productLinkId = Long.valueOf(request.get("productLinkId").toString());
-            Integer quantity = Integer.valueOf(request.get("quantity").toString());
-
-            cartService.addToCart(customer, productLinkId, quantity);
-            return ResponseEntity.ok(Map.of("message", "Item added to cart successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    private String getOrSetCookieId(@CookieValue(name = "cart_cookie_id", required = false) String cookieId, HttpServletResponse response) {
+        if (cookieId == null) {
+            cookieId = UUID.randomUUID().toString();
+            Cookie cookie = new Cookie("cart_cookie_id", cookieId);
+            cookie.setPath("/");
+            cookie.setMaxAge(60 * 60 * 24 * 365); // 1 year
+            response.addCookie(cookie);
         }
-    }
-
-    @DeleteMapping("/items/{itemId}")
-    public ResponseEntity<?> removeFromCart(@AuthenticationPrincipal Customer customer,
-            @PathVariable Long itemId) {
-        try {
-            cartService.removeFromCart(customer, itemId);
-            return ResponseEntity.ok(Map.of("message", "Item removed from cart successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PutMapping("/items/{itemId}")
-    public ResponseEntity<?> updateCartItemQuantity(@AuthenticationPrincipal Customer customer,
-            @PathVariable Long itemId,
-            @RequestBody Map<String, Integer> request) {
-        try {
-            cartService.updateCartItemQuantity(customer, itemId, request.get("quantity"));
-            return ResponseEntity.ok(Map.of("message", "Cart item quantity updated successfully"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+        return cookieId;
     }
 
     @GetMapping
-    public ResponseEntity<?> getCart(@AuthenticationPrincipal Customer customer) {
-        return ResponseEntity.ok(cartService.getCart(customer));
+    public ResponseEntity<CartResponse> getCart(@CookieValue(name = "cart_cookie_id", required = false) String cookieId, HttpServletResponse response) {
+        String cartCookieId = getOrSetCookieId(cookieId, response);
+        Cart cart = cartService.getCart(cartCookieId);
+        return ResponseEntity.ok(new CartResponse(cart));
+    }
+
+    @PostMapping("/items")
+    public ResponseEntity<CartResponse> addItemToCart(@CookieValue(name = "cart_cookie_id", required = false) String cookieId,
+                                                      @RequestBody CartItemRequest cartItemRequest,
+                                                      HttpServletResponse response) {
+        String cartCookieId = getOrSetCookieId(cookieId, response);
+        Cart cart = cartService.addItemToCart(cartCookieId, cartItemRequest);
+        return new ResponseEntity<>(new CartResponse(cart), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/items/{itemId}")
+    public ResponseEntity<CartResponse> removeItemFromCart(@CookieValue(name = "cart_cookie_id", required = false) String cookieId,
+                                                            @PathVariable Long itemId,
+                                                            HttpServletResponse response) {
+        String cartCookieId = getOrSetCookieId(cookieId, response);
+        Cart cart = cartService.removeItemFromCart(cartCookieId, itemId);
+        return ResponseEntity.ok(new CartResponse(cart));
+    }
+
+    @PutMapping("/items/{itemId}")
+    public ResponseEntity<CartResponse> updateItemQuantity(@CookieValue(name = "cart_cookie_id", required = false) String cookieId,
+                                                           @PathVariable Long itemId,
+                                                           @RequestBody CartItemUpdateRequest updateRequest,
+                                                           HttpServletResponse response) {
+        String cartCookieId = getOrSetCookieId(cookieId, response);
+        Cart cart = cartService.updateItemQuantity(cartCookieId, itemId, updateRequest);
+        return ResponseEntity.ok(new CartResponse(cart));
     }
 }

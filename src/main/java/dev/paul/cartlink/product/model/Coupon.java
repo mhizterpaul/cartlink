@@ -3,6 +3,7 @@ package dev.paul.cartlink.product.model;
 import jakarta.persistence.*;
 import java.time.Instant;
 import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
 
 @Entity
 @Table(name = "coupon")
@@ -13,7 +14,7 @@ public class Coupon {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    private MerchantProduct product;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "merchant_id", nullable = false)
@@ -34,11 +35,11 @@ public class Coupon {
         this.id = id;
     }
 
-    public Product getProduct() {
+    public MerchantProduct getProduct() {
         return product;
     }
 
-    public void setProduct(Product product) {
+    public void setProduct(MerchantProduct product) {
         this.product = product;
     }
 

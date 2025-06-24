@@ -3,6 +3,7 @@ package dev.paul.cartlink.order.repository;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.model.OrderStatus;
+import dev.paul.cartlink.customer.model.Customer;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +38,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     }
 
     List<Order> findByProductLink_LinkId(Long linkId);
+
+    List<Order> findByCustomer(Customer customer);
 }

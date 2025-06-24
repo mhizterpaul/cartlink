@@ -1,4 +1,4 @@
-package dev.paul.cartlink.config;
+package dev.paul.cartlink.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,6 +13,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import dev.paul.cartlink.auth.JwtAuthenticationFilter;
+import dev.paul.cartlink.security.service.SecurityService;
 
 import java.util.Arrays;
 
@@ -34,6 +37,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/customers/signup").permitAll() // Only signup is public
                         .requestMatchers("/api/merchant/signup", "/api/merchant/login").permitAll()
                         .requestMatchers("/api/merchant/password-reset-request").permitAll()

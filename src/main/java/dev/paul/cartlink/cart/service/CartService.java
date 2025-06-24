@@ -1,98 +1,98 @@
 package dev.paul.cartlink.cart.service;
 
+import dev.paul.cartlink.cart.dto.CartItemRequest;
+import dev.paul.cartlink.cart.dto.CartItemUpdateRequest;
 import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.cart.model.CartItem;
-import dev.paul.cartlink.cart.repository.CartRepository;
 import dev.paul.cartlink.cart.repository.CartItemRepository;
-import dev.paul.cartlink.product.model.ProductLink;
-import dev.paul.cartlink.product.repository.ProductLinkRepository;
-import dev.paul.cartlink.customer.model.Customer;
+import dev.paul.cartlink.cart.repository.CartRepository;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
+import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
-@Transactional
+@RequiredArgsConstructor
 public class CartService {
-
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
-    private final ProductLinkRepository productLinkRepository;
+    private final MerchantProductRepository merchantProductRepository;
 
-    public CartService(CartRepository cartRepository,
-            CartItemRepository cartItemRepository,
-            ProductLinkRepository productLinkRepository) {
-        this.cartRepository = cartRepository;
-        this.cartItemRepository = cartItemRepository;
-        this.productLinkRepository = productLinkRepository;
-    }
-
-    public CartItem addToCart(Customer customer, Long productLinkId, Integer quantity) {
-        Cart cart = getOrCreateCart(customer);
-        ProductLink productLink = productLinkRepository.findById(productLinkId)
-                .orElseThrow(() -> new IllegalArgumentException("Product link not found"));
-
-        CartItem existingItem = cartItemRepository.findByCartAndProductLink(cart, productLink)
-                .orElse(null);
-
-        if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
-            return cartItemRepository.save(existingItem);
-        }
-
-        CartItem newItem = new CartItem();
-        newItem.setCart(cart);
-        newItem.setProductLink(productLink);
-        newItem.setQuantity(quantity);
-        newItem.setPrice(productLink.getMerchantProduct().getPrice());
-        newItem.setDiscount(productLink.getMerchantProduct().getDiscount());
-
-        return cartItemRepository.save(newItem);
-    }
-
-    public void removeFromCart(Customer customer, Long itemId) {
-        Cart cart = getOrCreateCart(customer);
-        CartItem item = cartItemRepository.findById(itemId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
-
-        if (!item.getCart().equals(cart)) {
-            throw new IllegalArgumentException("Cart item does not belong to customer");
-        }
-
-        cartItemRepository.delete(item);
-    }
-
-    public CartItem updateCartItemQuantity(Customer customer, Long itemId, Integer quantity) {
-        Cart cart = getOrCreateCart(customer);
-        CartItem item = cartItemRepository.findById(itemId)
-                .orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
-
-        if (!item.getCart().equals(cart)) {
-            throw new IllegalArgumentException("Cart item does not belong to customer");
-        }
-
-        item.setQuantity(quantity);
-        return cartItemRepository.save(item);
-    }
-
-    public Cart getCart(Customer customer) {
-        return getOrCreateCart(customer);
-    }
-
-    private Cart getOrCreateCart(Customer customer) {
-        return cartRepository.findByCustomer(customer)
+    @Transactional
+    public Cart getOrCreateCart(String cookieId) {
+        return cartRepository.findByCookieId(cookieId)
                 .orElseGet(() -> {
-                    Cart newCart = new Cart();
-                    newCart.setCustomer(customer);
-                    newCart.setTotalAmount(0.0);
-                    return cartRepository.save(newCart);
+                    Cart cart = new Cart();
+                    cart.setCookieId(cookieId);
+                    return cartRepository.save(cart);
                 });
     }
 
-    public void clearCart(Customer customer) {
-        Cart cart = getOrCreateCart(customer);
-        List<CartItem> items = cartItemRepository.findByCart(cart);
-        cartItemRepository.deleteAll(items);
+    @Transactional
+    public Cart addItemToCart(String cookieId, CartItemRequest cartItemRequest) {
+        Cart cart = getOrCreateCart(cookieId);
+        MerchantProduct merchantProduct = merchantProductRepository.findById(cartItemRequest.getMerchantProductId())
+                .orElseThrow(() -> new IllegalArgumentException("MerchantProduct not found"));
+
+        Optional<CartItem> existingCartItem = cart.getItems().stream()
+                .filter(item -> item.getProduct().getId().equals(merchantProduct.getId()))
+                .findFirst();
+
+        if (existingCartItem.isPresent()) {
+            CartItem cartItem = existingCartItem.get();
+            cartItem.setQuantity(cartItem.getQuantity() + cartItemRequest.getQuantity());
+            cartItemRepository.save(cartItem);
+        } else {
+            CartItem cartItem = new CartItem();
+            cartItem.setCart(cart);
+            cartItem.setProduct(merchantProduct);
+            cartItem.setQuantity(cartItemRequest.getQuantity());
+            cart.getItems().add(cartItem);
+            cartItemRepository.save(cartItem);
+        }
+
+        return cartRepository.save(cart);
+    }
+
+    @Transactional
+    public Cart removeItemFromCart(String cookieId, Long itemId) {
+        Cart cart = getOrCreateCart(cookieId);
+        CartItem cartItem = cartItemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
+
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
+            throw new IllegalArgumentException("Cart item does not belong to the current user's cart");
+        }
+
+        cart.getItems().remove(cartItem);
+        cartItemRepository.delete(cartItem);
+        return cartRepository.save(cart);
+    }
+
+    @Transactional
+    public Cart updateItemQuantity(String cookieId, Long itemId, CartItemUpdateRequest updateRequest) {
+        Cart cart = getOrCreateCart(cookieId);
+        CartItem cartItem = cartItemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Cart item not found"));
+
+        if (!cartItem.getCart().getId().equals(cart.getId())) {
+            throw new IllegalArgumentException("Cart item does not belong to the current user's cart");
+        }
+
+        if (updateRequest.getQuantity() <= 0) {
+            cart.getItems().remove(cartItem);
+            cartItemRepository.delete(cartItem);
+        } else {
+            cartItem.setQuantity(updateRequest.getQuantity());
+            cartItemRepository.save(cartItem);
+        }
+        return cartRepository.save(cart);
+    }
+
+    public Cart getCart(String cookieId) {
+        return getOrCreateCart(cookieId);
     }
 }

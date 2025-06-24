@@ -2,11 +2,11 @@ package dev.paul.cartlink.merchant.service;
 
 import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.repository.OrderRepository;
+import dev.paul.cartlink.security.service.SecurityService;
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
 import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.complaint.repository.ComplaintRepository;
-import dev.paul.cartlink.config.SecurityService;
 import dev.paul.cartlink.customer.model.Review;
 import dev.paul.cartlink.customer.repository.ReviewRepository;
 import dev.paul.cartlink.merchant.model.Merchant;
@@ -14,6 +14,7 @@ import dev.paul.cartlink.merchant.model.Wallet;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.merchant.repository.WalletRepository;
 
+import dev.paul.cartlink.auth.service.AuthService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.Locale;
 import java.util.Comparator;
+import java.util.function.Function;
 
 @Service
 public class MerchantService {
@@ -41,6 +43,7 @@ public class MerchantService {
     private final ComplaintRepository complaintRepository;
     private final OrderRepository orderRepository;
     private final LinkAnalyticsRepository linkAnalyticsRepository;
+    private final AuthService authService;
 
     @Autowired
     public MerchantService(
@@ -51,7 +54,8 @@ public class MerchantService {
             ReviewRepository reviewRepository,
             ComplaintRepository complaintRepository,
             OrderRepository orderRepository,
-            LinkAnalyticsRepository linkAnalyticsRepository) {
+            LinkAnalyticsRepository linkAnalyticsRepository,
+            AuthService authService) {
         this.merchantRepository = merchantRepository;
         this.walletRepository = walletRepository;
         this.passwordEncoder = passwordEncoder;
@@ -60,6 +64,7 @@ public class MerchantService {
         this.complaintRepository = complaintRepository;
         this.orderRepository = orderRepository;
         this.linkAnalyticsRepository = linkAnalyticsRepository;
+        this.authService = authService;
     }
 
     @Transactional
@@ -81,10 +86,12 @@ public class MerchantService {
         // Encode password
         merchant.setPassword(passwordEncoder.encode(merchant.getPassword()));
 
-        return merchantRepository.save(merchant);
+        Merchant savedMerchant = merchantRepository.save(merchant);
+        authService.sendVerificationEmail(savedMerchant);
+        return savedMerchant;
     }
 
-    public String login(String email, String password) {
+    public String login(String email, String password, String ipAddress) {
         if (email == null || email.trim().isEmpty()) {
             throw new IllegalArgumentException("Email is required");
         }
@@ -95,6 +102,25 @@ public class MerchantService {
         if (!passwordEncoder.matches(password, merchant.getPassword())) {
             throw new IllegalArgumentException("Invalid email or password");
         }
+
+        if (!merchant.isEmailVerified()) {
+            throw new IllegalArgumentException("Email not verified");
+        }
+
+        // Update and rank IP addresses
+        List<String> ipAddresses = merchant.getIpAddresses();
+        ipAddresses.add(ipAddress);
+
+        Map<String, Long> ipCounts = ipAddresses.stream()
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+        List<String> sortedIps = ipAddresses.stream()
+                .distinct()
+                .sorted(Comparator.comparing((String ip) -> ipCounts.get(ip)).reversed())
+                .collect(Collectors.toList());
+
+        merchant.setIpAddresses(sortedIps);
+        merchantRepository.save(merchant);
 
         return securityService.generateToken(merchant);
     }

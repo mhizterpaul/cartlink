@@ -12,11 +12,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import dev.paul.cartlink.customer.model.Review;
-import dev.paul.cartlink.merchant.dto.MerchantProduct;
+import dev.paul.cartlink.complaint.model.Complaint;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -63,6 +67,24 @@ public class Merchant implements UserDetails {
     @OneToMany(mappedBy = "merchant", cascade = CascadeType.ALL)
     @JsonManagedReference(value = "merchant-products")
     private List<MerchantProduct> merchantProducts;
+
+    @JsonManagedReference("merchant-complaints")
+    private Set<Complaint> complaints = new HashSet<>();
+
+    private boolean emailVerified = false;
+
+    private String verificationToken;
+
+    private LocalDateTime verificationTokenExpiry;
+
+    private String passwordResetToken;
+
+    private LocalDateTime passwordResetTokenExpiry;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "merchant_ip_addresses", joinColumns = @JoinColumn(name = "merchant_id"))
+    @Column(name = "ip_address")
+    private List<String> ipAddresses = new ArrayList<>();
 
     public Merchant(String email, String password, String firstName, String lastName) {
         this.email = email;

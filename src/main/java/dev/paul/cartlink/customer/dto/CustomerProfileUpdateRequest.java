@@ -4,16 +4,27 @@ public class CustomerProfileUpdateRequest {
     private String firstName;
     private String lastName;
     private String phoneNumber;
-    private AddressDto address;
+    private String street;
+    private String city;
+    private String state;
+    private String country;
+    private String postalCode;
+    private String email;
 
     public CustomerProfileUpdateRequest() {
     }
 
-    public CustomerProfileUpdateRequest(String firstName, String lastName, String phoneNumber, AddressDto address) {
+    public CustomerProfileUpdateRequest(String firstName, String lastName, String phoneNumber, String street,
+            String city, String state, String country, String postalCode, String email) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.phoneNumber = phoneNumber;
-        this.address = address;
+        this.street = street;
+        this.city = city;
+        this.state = state;
+        this.country = country;
+        this.postalCode = postalCode;
+        this.email = email;
     }
 
     public String getFirstName() {
@@ -40,70 +51,51 @@ public class CustomerProfileUpdateRequest {
         this.phoneNumber = phoneNumber;
     }
 
-    public AddressDto getAddress() {
-        return address;
+    public String getStreet() {
+        return street;
     }
 
-    public void setAddress(AddressDto address) {
-        this.address = address;
+    public void setStreet(String street) {
+        this.street = street;
     }
 
-    public static class AddressDto {
-        private String street;
-        private String city;
-        private String state;
-        private String country;
-        private String postalCode;
+    public String getCity() {
+        return city;
+    }
 
-        public AddressDto() {
-        }
+    public void setCity(String city) {
+        this.city = city;
+    }
 
-        public AddressDto(String street, String city, String state, String country, String postalCode) {
-            this.street = street;
-            this.city = city;
-            this.state = state;
-            this.country = country;
-            this.postalCode = postalCode;
-        }
+    public String getState() {
+        return state;
+    }
 
-        public String getStreet() {
-            return street;
-        }
+    public void setState(String state) {
+        this.state = state;
+    }
 
-        public void setStreet(String street) {
-            this.street = street;
-        }
+    public String getCountry() {
+        return country;
+    }
 
-        public String getCity() {
-            return city;
-        }
+    public void setCountry(String country) {
+        this.country = country;
+    }
 
-        public void setCity(String city) {
-            this.city = city;
-        }
+    public String getPostalCode() {
+        return postalCode;
+    }
 
-        public String getState() {
-            return state;
-        }
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
 
-        public void setState(String state) {
-            this.state = state;
-        }
+    public String getEmail() {
+        return email;
+    }
 
-        public String getCountry() {
-            return country;
-        }
-
-        public void setCountry(String country) {
-            this.country = country;
-        }
-
-        public String getPostalCode() {
-            return postalCode;
-        }
-
-        public void setPostalCode(String postalCode) {
-            this.postalCode = postalCode;
-        }
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

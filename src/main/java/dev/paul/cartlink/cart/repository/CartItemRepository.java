@@ -2,7 +2,7 @@ package dev.paul.cartlink.cart.repository;
 
 import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.cart.model.CartItem;
-import dev.paul.cartlink.product.model.ProductLink;
+import dev.paul.cartlink.link.model.LinkAnalytics;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -14,5 +14,5 @@ import java.util.Optional;
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     List<CartItem> findByCart(Cart cart);
 
-    Optional<CartItem> findByCartAndProductLink(Cart cart, ProductLink productLink);
+    Optional<CartItem> findByCartAndLinkAnalytics(Cart cart, LinkAnalytics analytics);
 }
