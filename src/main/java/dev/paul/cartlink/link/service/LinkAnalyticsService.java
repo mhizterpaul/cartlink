@@ -109,4 +109,19 @@ public class LinkAnalyticsService {
         }
     }
 
+    @Transactional
+    public void updateTotalOrders(dev.paul.cartlink.link.model.Link link) {
+        if (link == null || link.getAnalytics() == null) {
+            return;
+        }
+        dev.paul.cartlink.link.model.LinkAnalytics analytics = link.getAnalytics();
+        if (analytics.getTotalOrders() == null) {
+            analytics.setTotalOrders(1);
+        } else {
+            analytics.setTotalOrders(analytics.getTotalOrders() + 1);
+        }
+        analytics.setLastUpdated(java.time.LocalDateTime.now());
+        linkAnalyticsRepository.save(analytics);
+    }
+
 }

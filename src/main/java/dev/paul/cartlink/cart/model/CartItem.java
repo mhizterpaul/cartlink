@@ -1,8 +1,8 @@
 package dev.paul.cartlink.cart.model;
 
+import dev.paul.cartlink.merchant.model.Coupon;
 import dev.paul.cartlink.merchant.model.MerchantProduct;
 import jakarta.persistence.*;
-import dev.paul.cartlink.product.model.Coupon;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;

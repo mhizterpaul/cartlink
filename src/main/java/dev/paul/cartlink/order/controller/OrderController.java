@@ -3,9 +3,12 @@ package dev.paul.cartlink.order.controller;
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.service.CustomerService;
 import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
+import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
 import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.service.OrderService;
+import dev.paul.cartlink.payment.service.PaymentService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,10 +24,14 @@ public class OrderController {
 
     private final OrderService orderService;
     private final CustomerService customerService;
+    private final MerchantProductRepository merchantProductRepository;
+    private final PaymentService paymentService;
 
-    public OrderController(OrderService orderService, CustomerService customerService) {
+    public OrderController(OrderService orderService, CustomerService customerService, MerchantProductRepository merchantProductRepository, PaymentService paymentService) {
         this.orderService = orderService;
         this.customerService = customerService;
+        this.merchantProductRepository = merchantProductRepository;
+        this.paymentService = paymentService;
     }
 
     @GetMapping
@@ -35,6 +42,7 @@ public class OrderController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit) {
         try {
+            Merchant merchant = orderService.getMerchantById(merchantId);
             List<Order> orders;
             if (status != null) {
                 orders = orderService.getMerchantOrdersByStatus(merchant, OrderStatus.valueOf(status));
@@ -68,22 +76,8 @@ public class OrderController {
         }
     }
 
-    @PutMapping("/{orderId}/tracking")
-    public ResponseEntity<?> updateOrderTracking(@AuthenticationPrincipal Merchant merchant,
-            @PathVariable Long orderId,
-            @RequestBody Map<String, String> request) {
-        try {
-            orderService.updateOrderTracking(orderId, request.get("trackingId"));
-            return ResponseEntity.ok(Map.of(
-                    "message", "Tracking information updated successfully",
-                    "orderId", orderId,
-                    "trackingId", request.get("trackingId")));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
-    }
 
-    @GetMapping("/link/{linkId}")
+    @GetMapping("api/v1/merchants/{merchantId}/orders/{linkId}")
     public ResponseEntity<?> getOrdersByLink(@PathVariable Long merchantId,
             @PathVariable Long linkId) {
         try {
@@ -122,13 +116,31 @@ public class OrderController {
             }
             // Extract order details
             Long merchantProductId = Long.valueOf(request.get("merchantProductId").toString());
+            MerchantProduct merchantProduct = merchantProductRepository.findById(merchantProductId)
+                .orElseThrow(() -> new IllegalArgumentException("MerchantProduct not found"));
             Integer quantity = Integer.valueOf(request.get("quantity").toString());
             Long productLinkId = request.get("productLinkId") != null
                     ? Long.valueOf(request.get("productLinkId").toString())
                     : null;
-            Order order = orderService.createOrderForCustomer(customer, merchantProductId, quantity, productLinkId);
+            Order order = orderService.createOrder(merchantProduct, customer, quantity, productLinkId);
             return ResponseEntity.status(201).body(order);
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/{orderId}/delivered")
+    public ResponseEntity<?> markOrderDelivered(@PathVariable Long merchantId, @PathVariable Long orderId) {
+        try {
+            Order order = orderService.updateOrderStatus(orderId, OrderStatus.DELIVERED);
+            paymentService.payMerchant(orderId);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Order marked as delivered and merchant paid",
+                "orderId", order.getOrderId(),
+                "newStatus", order.getStatus()
+            ));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

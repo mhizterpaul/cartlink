@@ -1,13 +1,14 @@
 package dev.mhizterpaul.cartlink.integration.product;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import dev.paul.cartlink.merchant.dto.BatchUploadResponse;
 // Assuming DTOs like ProductCreateRequest, ProductEditRequest, ProductResponse, BatchUploadResponse
 // are in dev.paul.cartlink.product.dto or a common dto package.
 // For now, using placeholders.
 import dev.paul.cartlink.product.dto.ProductCreateRequest; // Placeholder
 import dev.paul.cartlink.product.dto.ProductEditRequest; // Placeholder
 import dev.paul.cartlink.product.dto.ProductResponse; // Placeholder
-import dev.paul.cartlink.product.dto.BatchUploadResponse; // Placeholder
 import dev.paul.cartlink.product.dto.ProductResponse; // Common Placeholder
 
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +67,8 @@ public class ProductControllerIT {
             productData.put("price", 19.99);
             // productData.put("productDetails", Map.of("color", "Red")); // Example of
             // productDetails
-            // productData.put("typeId", "someTypeId"); // If typeId is needed for schema
+            // productData.put("productId", "someProductId"); // If productId is needed for
+            // schema
             // validation
 
             mockMvc.perform(post("/api/v1/merchants/{merchantId}/products", merchantIdForTest)

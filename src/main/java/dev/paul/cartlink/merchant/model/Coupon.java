@@ -1,9 +1,7 @@
-package dev.paul.cartlink.product.model;
+package dev.paul.cartlink.merchant.model;
 
 import jakarta.persistence.*;
 import java.time.Instant;
-import dev.paul.cartlink.merchant.model.Merchant;
-import dev.paul.cartlink.merchant.model.MerchantProduct;
 
 @Entity
 @Table(name = "coupon")
@@ -89,5 +87,13 @@ public class Coupon {
 
     public void setMaxUsers(Integer maxUsers) {
         this.maxUsers = maxUsers;
+    }
+
+    public MerchantProduct getMerchantProduct() {
+        return product;
+    }
+
+    public void setMerchantProduct(MerchantProduct merchantProduct) {
+        this.product = merchantProduct;
     }
 }

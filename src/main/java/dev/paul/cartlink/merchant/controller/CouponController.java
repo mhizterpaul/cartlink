@@ -1,11 +1,12 @@
-package dev.paul.cartlink.product.controller;
+package dev.paul.cartlink.merchant.controller;
 
-import dev.paul.cartlink.product.dto.CouponCreateRequest;
-import dev.paul.cartlink.product.dto.CouponIdResponse;
-import dev.paul.cartlink.product.dto.CouponDetailsResponse;
-import dev.paul.cartlink.product.model.Coupon;
-import dev.paul.cartlink.product.service.CouponService;
+import dev.paul.cartlink.merchant.dto.CouponCreateRequest;
+import dev.paul.cartlink.merchant.dto.CouponDetailsResponse;
+import dev.paul.cartlink.merchant.dto.CouponIdResponse;
+import dev.paul.cartlink.merchant.model.Coupon;
 import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.service.CouponService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

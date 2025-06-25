@@ -1,4 +1,4 @@
-package dev.paul.cartlink.product.service;
+package dev.paul.cartlink.merchant.service;
 
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
@@ -24,8 +24,8 @@ public class MerchantProductService {
         this.merchantProductRepository = merchantProductRepository;
     }
 
-    public MerchantProduct addProduct(Merchant merchant, Product product, Integer stock, Double price,
-            Double discount, String logisticsProvider) {
+    public MerchantProduct addMerchantProduct(Merchant merchant, Product product, Integer stock, Double price,
+            String description) {
         Product savedProduct = productRepository.save(product);
 
         MerchantProduct merchantProduct = new MerchantProduct();
@@ -33,29 +33,35 @@ public class MerchantProductService {
         merchantProduct.setProduct(savedProduct);
         merchantProduct.setStock(stock);
         merchantProduct.setPrice(price);
+        merchantProduct.setDescription(description);
 
         return merchantProductRepository.save(merchantProduct);
     }
 
-    public MerchantProduct updateProduct(Long merchantProductId, Product product, Integer stock,
-            Double price, Double discount) {
+    public MerchantProduct updateMerchantProduct(Merchant merchant, Long merchantProductId, Product product,
+            Integer stock, Double price, String description) {
         MerchantProduct merchantProduct = merchantProductRepository.findById(merchantProductId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-
+                .orElseThrow(() -> new IllegalArgumentException("Merchant product not found"));
+        if (!merchantProduct.getMerchant().getId().equals(merchant.getId())) {
+            throw new IllegalArgumentException("Unauthorized");
+        }
         Product existingProduct = merchantProduct.getProduct();
         existingProduct.setName(product.getName());
-        existingProduct.setDescription(product.getDescription());
-
+        existingProduct.setBrand(product.getBrand());
+        existingProduct.setCategory(product.getCategory());
         merchantProduct.setStock(stock);
         merchantProduct.setPrice(price);
-
+        merchantProduct.setDescription(description);
         return merchantProductRepository.save(merchantProduct);
     }
 
-    public void deleteProduct(Long merchantProductId) {
+    // Rename for consistency and add merchant check
+    public void deleteMerchantProduct(Merchant merchant, Long merchantProductId) {
         MerchantProduct merchantProduct = merchantProductRepository.findById(merchantProductId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-
+                .orElseThrow(() -> new IllegalArgumentException("Merchant product not found"));
+        if (!merchantProduct.getMerchant().getId().equals(merchant.getId())) {
+            throw new IllegalArgumentException("Unauthorized");
+        }
         merchantProductRepository.delete(merchantProduct);
         productRepository.delete(merchantProduct.getProduct());
     }
@@ -68,7 +74,7 @@ public class MerchantProductService {
         return merchantProductRepository.findByMerchantAndProductNameContainingIgnoreCase(merchant, searchTerm);
     }
 
-    public List<MerchantProduct> getInStockProducts(Merchant merchant) {
+    public List<MerchantProduct> getInStockMerchantProducts(Merchant merchant) {
         return merchantProductRepository.findByMerchantAndStockGreaterThan(merchant, 0);
     }
 
@@ -76,19 +82,9 @@ public class MerchantProductService {
         return productRepository.findById(productId).orElse(null);
     }
 
-    public List<Map<String, Object>> batchUploadProducts(Merchant merchant, List<Map<String, Object>> products) {
-        List<Map<String, Object>> failed = new java.util.ArrayList<>();
-        for (Map<String, Object> req : products) {
-            try {
-                Product product = new Product();
-                product.setName((String) req.get("name"));
-                // Set other fields as needed
-                addProduct(
-                        product);
-            } catch (Exception e) {
-                failed.add(req);
-            }
-        }
-        return failed;
+    public List<Map<String, Object>> batchUploadMerchantProducts(Merchant merchant,
+            List<Map<String, Object>> merchantProducts) {
+        // TODO: Implement batch upload logic
+        return List.of();
     }
 }

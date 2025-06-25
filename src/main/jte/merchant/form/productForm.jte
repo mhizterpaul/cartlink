@@ -1,4 +1,4 @@
-@param String typeId
+@param String productId
 @param String productType
 @param java.util.List fields
 
@@ -20,7 +20,7 @@
     <div class="container">
         <h2>Create Product: ${productType}</h2>
         <form action="/api/v1/merchants/products" method="post">
-            <input type="hidden" name="typeId" value="${typeId}" />
+            <input type="hidden" name="productId" value="${productId}" />
             <input type="hidden" name="productType" value="${productType}" />
             @for(field : fields)
                 <div class="form-group">

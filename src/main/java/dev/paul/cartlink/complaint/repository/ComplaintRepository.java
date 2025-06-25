@@ -16,4 +16,6 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long> {
     List<Complaint> findByOrder(Order order);
 
     List<Complaint> findByOrder_MerchantProduct_Merchant_MerchantId(Long merchantId);
+
+    boolean existsByOrder_OrderId(Long orderId);
 }

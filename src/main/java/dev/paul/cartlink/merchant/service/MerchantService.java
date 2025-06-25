@@ -227,7 +227,7 @@ public class MerchantService {
         double totalSales = orderRepository.findByMerchantProduct_Merchant_merchantId(currentMerchant.getMerchantId())
                 .stream()
                 .mapToDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
-                        * Optional.ofNullable(order.getMerchantProduct().getProduct().getPrice()).orElse(0.0))
+                        * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))
                 .sum();
 
         // Get total orders
@@ -243,7 +243,7 @@ public class MerchantService {
                         java.time.LocalDateTime.now().withHour(0).withMinute(0).withSecond(0))
                 .stream()
                 .mapToDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
-                        * Optional.ofNullable(order.getMerchantProduct().getProduct().getPrice()).orElse(0.0))
+                        * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))
                 .sum();
 
         stats.put("todaySales", todaySales);
@@ -254,43 +254,81 @@ public class MerchantService {
         return stats;
     }
 
-    public List<Map<String, Object>> getSalesDataForChart() {
+    // Fix: Use getSalesDataForChart for sales chart data
+    public List<Map<String, Object>> getSalesDataForChart(String period, String startDate, String endDate) {
         Merchant currentMerchant = getCurrentMerchant();
         List<Order> orders = orderRepository.findByMerchantProduct_Merchant_merchantId(currentMerchant.getMerchantId());
-
-        Map<Month, Double> monthlySales = orders.stream()
-                .collect(Collectors.groupingBy(
-                        order -> order.getOrderDate().getMonth(),
-                        Collectors.summingDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0) * Optional
-                                .ofNullable(order.getMerchantProduct().getProduct().getPrice()).orElse(0.0))));
-
-        return monthlySales.entrySet().stream()
-                .map(entry -> {
-                    Map<String, Object> data = new HashMap<>();
-                    data.put("name", entry.getKey().getDisplayName(TextStyle.SHORT, Locale.ENGLISH));
-                    data.put("sales", entry.getValue());
-                    return data;
-                })
-                .sorted(Comparator.comparingInt(
-                        data -> Month.valueOf(((String) data.get("name")).toUpperCase(Locale.ENGLISH)).getValue()))
-                .collect(Collectors.toList());
+        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ISO_LOCAL_DATE;
+        java.util.Map<String, Double> salesData = new java.util.HashMap<>();
+        if (period != null && period.equalsIgnoreCase("week")) {
+            // Group by week
+            orders.stream().collect(Collectors.groupingBy(
+                    order -> order.getOrderDate().with(java.time.DayOfWeek.MONDAY).toLocalDate().toString(),
+                    Collectors.summingDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
+                            * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))))
+                    .forEach(salesData::put);
+        } else if (period != null && period.equalsIgnoreCase("month")) {
+            // Group by month
+            orders.stream().collect(Collectors.groupingBy(
+                    order -> order.getOrderDate().getMonth().getDisplayName(java.time.format.TextStyle.SHORT,
+                            java.util.Locale.ENGLISH),
+                    Collectors.summingDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
+                            * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))))
+                    .forEach(salesData::put);
+        } else if (period != null && period.equalsIgnoreCase("quarter")) {
+            // Group by quarter
+            orders.stream().collect(Collectors.groupingBy(
+                    order -> "Q" + ((order.getOrderDate().getMonthValue() - 1) / 3 + 1),
+                    Collectors.summingDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
+                            * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))))
+                    .forEach(salesData::put);
+        } else if (startDate != null && endDate != null) {
+            java.time.LocalDate start = java.time.LocalDate.parse(startDate, dtf);
+            java.time.LocalDate end = java.time.LocalDate.parse(endDate, dtf);
+            orders.stream().filter(order -> {
+                java.time.LocalDate orderDate = order.getOrderDate().toLocalDate();
+                return (orderDate.isEqual(start) || orderDate.isAfter(start))
+                        && (orderDate.isEqual(end) || orderDate.isBefore(end));
+            }).collect(Collectors.groupingBy(
+                    order -> order.getOrderDate().toLocalDate().toString(),
+                    Collectors.summingDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
+                            * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))))
+                    .forEach(salesData::put);
+        } else {
+            // Default: group by month
+            orders.stream().collect(Collectors.groupingBy(
+                    order -> order.getOrderDate().getMonth().getDisplayName(java.time.format.TextStyle.SHORT,
+                            java.util.Locale.ENGLISH),
+                    Collectors.summingDouble(order -> Optional.ofNullable(order.getQuantity()).orElse(0)
+                            * Optional.ofNullable(order.getMerchantProduct().getPrice()).orElse(0.0))))
+                    .forEach(salesData::put);
+        }
+        return salesData.entrySet().stream().map(entry -> {
+            java.util.Map<String, Object> data = new java.util.HashMap<>();
+            data.put("name", entry.getKey());
+            data.put("sales", entry.getValue());
+            return data;
+        }).collect(Collectors.toList());
     }
 
     public List<Map<String, Object>> getTrafficDataForChart() {
         Merchant currentMerchant = getCurrentMerchant();
-        List<Long> productLinkIds = currentMerchant.getMerchantProducts().stream()
-                .flatMap(merchantProduct -> merchantProduct.getProductLinks().stream())
-                .map(productLink -> productLink.getLinkId())
+        // Collect all LinkAnalytics for this merchant's products
+        List<LinkAnalytics> analytics = currentMerchant.getMerchantProducts().stream()
+                .flatMap(mp -> mp.getLinkAnalytics() != null ? mp.getLinkAnalytics().stream()
+                        : java.util.stream.Stream.empty())
                 .collect(Collectors.toList());
 
-        List<LinkAnalytics> analytics = linkAnalyticsRepository.findByProductLink_LinkIdIn(productLinkIds);
-
-        Map<String, Long> trafficSourceCounts = analytics.stream()
-                .collect(Collectors.groupingBy(
-                        analytic -> analytic.getSource() != null && !analytic.getSource().isEmpty()
-                                ? analytic.getSource()
-                                : "Direct/Unknown",
-                        Collectors.counting()));
+        // Aggregate all uniqueSourceClicks
+        Map<String, Long> trafficSourceCounts = new HashMap<>();
+        for (LinkAnalytics analytic : analytics) {
+            if (analytic.getUniqueSourceClicks() != null) {
+                analytic.getUniqueSourceClicks().forEach((source, count) -> {
+                    String key = (source != null && !source.isEmpty()) ? source : "Direct/Unknown";
+                    trafficSourceCounts.put(key, trafficSourceCounts.getOrDefault(key, 0L) + count);
+                });
+            }
+        }
 
         return trafficSourceCounts.entrySet().stream()
                 .map(entry -> {

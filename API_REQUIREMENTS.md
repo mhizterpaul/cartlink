@@ -147,7 +147,7 @@ Customers are tracked via **cookies**.
 * `201 Created`: `{ productId, merchantProductId, productDetails }`
 * `401 Unauthorized`
 
-*Note:* Schema for new product validation is created at runtime and used to validate products with the same `typeId`. If a `typeId` derived from a `productType` is not found, the schema is initialized and reused.
+*Note:* Schema for new product validation is created at runtime and used to validate products with the same `productId`. If a `productId` derived from a `productType` is not found, the schema is initialized and reused.
 
 ### 2. Edit Product
 
@@ -240,7 +240,7 @@ Customers are tracked via **cookies**.
 
 * `400 Bad Request`
 
-*Note:* Validation schema is stored and reused for each `typeId`.
+*Note:* Validation schema is stored and reused for each `productId`.
 
 ---
 
@@ -315,6 +315,19 @@ Customers are tracked via **cookies**.
 
 * **GET** `/api/v1/merchants/{merchantId}/orders/link/{linkId}`
 * `200 OK`: `[{ ... }]`
+
+#### 4. Mark Order as Delivered
+**PATCH** `/api/v1/merchants/{merchantId}/orders/{orderId}/delivered`
+
+Marks the order as delivered and triggers merchant payout if eligible.
+
+**Response:**
+- `200 OK`: Order marked as delivered and merchant paid
+- `400 Bad Request`: Error message
+
+#### 5. Automatic Merchant Payout
+
+Merchants are automatically paid for orders that are PAID and DELIVERED for more than 14 days. This is handled by a scheduled service and does not require a direct API call.
 
 ### Customer
 
@@ -456,6 +469,51 @@ Customers are tracked via **cookies**.
 * `200 OK`: `{ success: true }`
 
 ---
+
+## 💳 Payment Endpoints
+
+### Payment Entity
+```json
+{
+  "paymentId": 1,
+  "order": { /* Order object */ },
+  "method": "CARD", // CARD, USSD, BANK_TRANSFER
+  "status": "PENDING", // PENDING, SUCCESSFUL, FAILED, REFUNDED
+  "amount": 1500,
+  "currency": "NGN",
+  "txRef": "TX-ORDER-001",
+  "flwRef": "FLW-REF-123456",
+  "createdAt": "2025-06-25T12:00:00Z",
+  "paidAt": null,
+  "refundedAt": null
+}
+```
+
+### 1. Initiate Payment
+**POST** `/api/v1/payments/initiate`
+
+**Request Params:**
+- `orderId` (Long, required)
+- `method` (PaymentMethod, required: CARD, USSD, BANK_TRANSFER)
+- `amount` (double, required)
+- `currency` (String, required)
+- `txRef` (String, required)
+
+**Response:**
+- `200 OK`: Payment entity
+- `400 Bad Request`: Order not found
+
+### 2. Refund Payment
+**POST** `/api/v1/payments/refund/{orderId}`
+
+Triggers the refund process for the given order if eligible (e.g., not shipped after 14 days, no complaints).
+
+**Response:**
+- `200 OK`: Refund process triggered
+
+### 3. Automatic Merchant Payout
+
+Merchants are automatically paid for orders that are PAID and DELIVERED for more than 14 days. This is handled by a scheduled service and does not require a direct API call.
 
 ---
 

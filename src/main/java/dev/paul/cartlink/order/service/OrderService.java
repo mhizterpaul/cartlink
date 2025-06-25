@@ -4,10 +4,12 @@ import dev.paul.cartlink.order.model.Order;
 import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.customer.model.Customer;
-import dev.paul.cartlink.link.model.LinkAnalytics;
-import dev.paul.cartlink.link.service.LinkService;
+import dev.paul.cartlink.link.repository.LinkRepository;
+import dev.paul.cartlink.link.model.Link;
+import dev.paul.cartlink.link.service.LinkAnalyticsService;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.model.MerchantProduct;
+import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,27 +21,28 @@ import java.util.List;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final LinkService productLinkService;
+    private final LinkRepository linkRepository;
+    private final LinkAnalyticsService linkAnalyticsService;
+    private final MerchantProductRepository merchantProductRepository;
 
     public OrderService(OrderRepository orderRepository,
-            LinkService productLinkService) {
+            LinkRepository linkRepository, LinkAnalyticsService linkAnalyticsService,
+            MerchantProductRepository merchantProductRepository) {
         this.orderRepository = orderRepository;
-        this.productLinkService = productLinkService;
+        this.linkRepository = linkRepository;
+        this.linkAnalyticsService = linkAnalyticsService;
+        this.merchantProductRepository = merchantProductRepository;
     }
 
     @Transactional
     public Order createOrder(MerchantProduct merchantProduct, Customer customer,
-            Integer orderSize, Long analyticsId) {
+            Integer orderSize, Long linkId) {
         if (merchantProduct.getStock() < orderSize) {
             throw new IllegalArgumentException("Insufficient stock");
         }
 
         // Fetch LinkAnalytics by analyticsId
-        LinkAnalytics productLink = null;
-        if (analyticsId != null) {
-            productLink = productLinkService.getLinkAnalyticsById(analyticsId)
-                    .orElse(null);
-        }
+        Link productLink = linkRepository.getReferenceById(linkId);
 
         Order order = new Order();
         order.setMerchantProduct(merchantProduct);
@@ -47,12 +50,12 @@ public class OrderService {
         order.setOrderSize(orderSize);
         order.setStatus(OrderStatus.PENDING);
         order.setPaid(false);
-        order.setProductLink(productLink);
+        order.setLink(productLink);
 
         Order savedOrder = orderRepository.save(order);
 
         if (productLink != null) {
-            productLinkService.trackConversion(productLink);
+            linkAnalyticsService.updateTotalOrders(productLink);
         }
 
         return savedOrder;
@@ -93,16 +96,6 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    @Transactional
-    public void updateOrderTracking(Long orderId, String trackingId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
-
-        order.setTrackingId(trackingId);
-        order.setUpdatedAt(LocalDateTime.now());
-        orderRepository.save(order);
-    }
-
     public List<Order> getOrdersByProductLink(Long linkId) {
         return orderRepository.findByProductLink_LinkId(linkId);
     }
@@ -118,4 +111,17 @@ public class OrderService {
             return List.of();
         return allOrders.subList(fromIndex, toIndex);
     }
+
+    /**
+     * Retrieves a Merchant by its ID by searching the MerchantProduct table.
+     * Throws IllegalArgumentException if not found.
+     */
+    public Merchant getMerchantById(Long merchantId) {
+        return merchantProductRepository.findAll().stream()
+                .map(MerchantProduct::getMerchant)
+                .filter(m -> m.getId().equals(merchantId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Merchant not found"));
+    }
+
 }

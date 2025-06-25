@@ -1,4 +1,4 @@
-package dev.paul.cartlink.product.dto;
+package dev.paul.cartlink.merchant.dto;
 
 import java.util.List;
 

@@ -1,10 +1,11 @@
-package dev.paul.cartlink.product.service;
+package dev.paul.cartlink.merchant.service;
 
-import dev.paul.cartlink.product.model.Coupon;
-import dev.paul.cartlink.product.model.Product;
-import dev.paul.cartlink.product.repository.CouponRepository;
-import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.merchant.model.MerchantProduct;
+import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
+import dev.paul.cartlink.merchant.model.Coupon;
 import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.repository.CouponRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,20 +16,20 @@ import java.util.Optional;
 @Service
 public class CouponService {
     private final CouponRepository couponRepository;
-    private final ProductRepository productRepository;
+    private final MerchantProductRepository merchantProductRepository;
 
-    public CouponService(CouponRepository couponRepository, ProductRepository productRepository) {
+    public CouponService(CouponRepository couponRepository, MerchantProductRepository merchantProductRepository) {
         this.couponRepository = couponRepository;
-        this.productRepository = productRepository;
+        this.merchantProductRepository = merchantProductRepository;
     }
 
     @Transactional
-    public Coupon createCoupon(Long productId, Merchant merchant, Double discount, Instant validFrom,
+    public Coupon createCoupon(Long merchantProductId, Merchant merchant, Double discount, Instant validFrom,
             Instant validUntil, Integer maxUsage, Integer maxUsers) {
-        Product product = productRepository.findById(productId)
+        MerchantProduct product = merchantProductRepository.findById(merchantProductId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found"));
         Coupon coupon = new Coupon();
-        coupon.setProduct(product);
+        coupon.setMerchantProduct(product);
         coupon.setMerchant(merchant);
         coupon.setDiscount(discount);
         coupon.setValidFrom(validFrom);

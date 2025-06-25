@@ -1,4 +1,4 @@
-package dev.paul.cartlink.product.controller;
+package dev.paul.cartlink.merchant.controller;
 
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.service.RefundService;

@@ -8,8 +8,9 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import dev.paul.cartlink.complaint.model.Complaint;
 import dev.paul.cartlink.customer.model.Customer;
-import dev.paul.cartlink.link.model.LinkAnalytics;
+import dev.paul.cartlink.link.model.Link;
 import dev.paul.cartlink.merchant.model.MerchantProduct;
+import dev.paul.cartlink.payment.model.Payment;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
@@ -40,13 +41,12 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "product_link_id")
     @JsonBackReference("productLink-orders")
-    private LinkAnalytics linkAnalytics;
+    private Link link;
 
     private Integer quantity;
     private Double totalPrice;
     private LocalDateTime orderDate;
     private LocalDateTime lastUpdated;
-    private String trackingId;
     private Boolean paid;
 
     @Enumerated(EnumType.STRING)
@@ -55,6 +55,9 @@ public class Order {
     @OneToMany(mappedBy = "order")
     @JsonManagedReference("order-complaints")
     private Set<Complaint> complaints = new HashSet<>();
+
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    private Payment payment;
 
     @PrePersist
     protected void onCreate() {
@@ -74,13 +77,6 @@ public class Order {
 
     public void setUpdatedAt(LocalDateTime date) {
         this.lastUpdated = date;
-    }
-
-    public void setMerchant(dev.paul.cartlink.merchant.model.Merchant merchant) {
-        // This is a placeholder. In your domain, you may need to set merchantProduct
-        // instead.
-        // For test compatibility, we do nothing or set merchantProduct to null.
-        this.merchantProduct = null;
     }
 
     public void setCustomer(dev.paul.cartlink.customer.model.Customer customer) {

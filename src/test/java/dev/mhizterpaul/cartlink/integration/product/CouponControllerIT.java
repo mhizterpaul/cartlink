@@ -3,21 +3,18 @@ package dev.mhizterpaul.cartlink.integration.product;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-// Placeholder imports as actual controller/service for coupons were not explicitly found.
-// Assuming they would reside in product package if created.
-import dev.paul.cartlink.product.controller.CouponController; // Placeholder
-import dev.paul.cartlink.product.dto.CouponCreateRequest; // Placeholder
-import dev.paul.cartlink.product.dto.CouponIdResponse; // Placeholder
-import dev.paul.cartlink.product.dto.CouponDetailsResponse; // Placeholder
 import dev.paul.cartlink.product.dto.ProductResponse; // Corrected import
-
+import dev.paul.cartlink.merchant.controller.CouponController;
+import dev.paul.cartlink.merchant.dto.CouponCreateRequest;
+import dev.paul.cartlink.merchant.dto.CouponDetailsResponse;
+import dev.paul.cartlink.merchant.dto.CouponIdResponse;
+import dev.paul.cartlink.merchant.model.Coupon;
 // For test data setup
 import dev.paul.cartlink.merchant.model.Merchant;
+import dev.paul.cartlink.merchant.repository.CouponRepository;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
-import dev.paul.cartlink.product.model.Coupon; // Assuming a Coupon model
-import dev.paul.cartlink.product.repository.CouponRepository; // Assuming a Coupon repository
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

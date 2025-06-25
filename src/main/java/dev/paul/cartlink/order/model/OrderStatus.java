@@ -3,8 +3,8 @@ package dev.paul.cartlink.order.model;
 public enum OrderStatus {
     PENDING,
     COMPLETED,
-    PAID,
     PROCESSING,
+    PAID,
     SHIPPED,
     DELIVERED,
     CANCELLED,

@@ -31,9 +31,9 @@ def main():
     args = parser.parse_args()
 
     rep_word = extract_representative_word(args.productType)
-    type_id = generate_type_id(rep_word)
+    product_id = generate_type_id(rep_word)
 
-    # Fields used for typeId/form: category, productType, brand, name, description
+    # Fields used for productId/form: category, productType, brand, name, description
     # Product fields to enrich with (excluding 'specifications' for HTML form):
     additional_fields = [
         {"name": "productionYear", "type": "Integer", "label": "Production Year"},
@@ -65,7 +65,7 @@ def main():
     ]
     all_fields = llm_fields + additional_fields
     response = {
-        "typeId": type_id,
+        "productId": product_id,
         "representativeWord": rep_word,
         "fields": all_fields
     }

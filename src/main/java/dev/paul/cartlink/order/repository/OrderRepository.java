@@ -40,4 +40,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByProductLink_LinkId(Long linkId);
 
     List<Order> findByCustomer(Customer customer);
+
+    @Query("SELECT o FROM Order o WHERE o.status = dev.paul.cartlink.order.model.OrderStatus.DELIVERED AND o.paid = true AND o.lastUpdated < :cutoffDate")
+    List<Order> findDeliveredPaidOrdersOlderThan(LocalDateTime cutoffDate);
+
+    @Query("SELECT o FROM Order o WHERE o.status = dev.paul.cartlink.order.model.OrderStatus.PAID AND o.lastUpdated < :cutoffDate AND o.status <> dev.paul.cartlink.order.model.OrderStatus.SHIPPED")
+    List<Order> findStaleUnshippedPaidOrdersOlderThan(LocalDateTime cutoffDate);
 }

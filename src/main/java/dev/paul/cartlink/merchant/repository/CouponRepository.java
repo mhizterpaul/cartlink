@@ -1,8 +1,10 @@
-package dev.paul.cartlink.product.repository;
+package dev.paul.cartlink.merchant.repository;
 
-import dev.paul.cartlink.product.model.Coupon;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import dev.paul.cartlink.merchant.model.Coupon;
+
 import java.util.List;
 
 @Repository

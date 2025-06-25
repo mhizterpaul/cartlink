@@ -41,6 +41,10 @@ public class LinkAnalytics {
 
     private Double bounceRate;
 
+    private Number conversionRate;
+
+    private Integer TotalOrders;
+
     private Long averageTimeSpent; // in seconds
 
     @Column(nullable = false)

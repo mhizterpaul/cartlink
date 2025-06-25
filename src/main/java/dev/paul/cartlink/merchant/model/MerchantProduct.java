@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.order.model.Order;
-import dev.paul.cartlink.product.model.Coupon;
 import dev.paul.cartlink.product.model.Product;
 
 import java.net.InetAddress;
