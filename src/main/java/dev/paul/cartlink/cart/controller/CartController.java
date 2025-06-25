@@ -3,6 +3,8 @@ package dev.paul.cartlink.cart.controller;
 import dev.paul.cartlink.cart.dto.CartItemRequest;
 import dev.paul.cartlink.cart.dto.CartItemUpdateRequest;
 import dev.paul.cartlink.cart.dto.CartResponse;
+import dev.paul.cartlink.cart.dto.CheckoutRequest;
+import dev.paul.cartlink.cart.dto.CheckoutResponse;
 import dev.paul.cartlink.cart.model.Cart;
 import dev.paul.cartlink.cart.service.CartService;
 import jakarta.servlet.http.Cookie;
@@ -65,5 +67,14 @@ public class CartController {
         String cartCookieId = getOrSetCookieId(cookieId, response);
         Cart cart = cartService.updateItemQuantity(cartCookieId, itemId, updateRequest);
         return ResponseEntity.ok(new CartResponse(cart));
+    }
+
+    @PostMapping("/checkout")
+    public ResponseEntity<CheckoutResponse> checkoutCart(@CookieValue(name = "cart_cookie_id", required = false) String cookieId,
+                                                        @RequestBody CheckoutRequest request,
+                                                        HttpServletResponse response) {
+        String cartCookieId = getOrSetCookieId(cookieId, response);
+        CheckoutResponse checkoutResponse = cartService.checkoutCart(cartCookieId, request);
+        return ResponseEntity.ok(checkoutResponse);
     }
 }

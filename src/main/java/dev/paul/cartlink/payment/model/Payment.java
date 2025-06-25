@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import dev.paul.cartlink.order.model.Order;
-import dev.paul.cartlink.payment.model.PaymentStatus;
-import dev.paul.cartlink.payment.model.PaymentMethod;
 
 import java.time.LocalDateTime;
 

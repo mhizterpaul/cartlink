@@ -136,6 +136,35 @@ Customers are tracked via **cookies**.
 * **GET** `/api/v1/customers/orders/history?page=1&limit=20`
 * `200 OK`: List of past orders
 
+#### 4. Checkout Cart
+**POST** `/api/v1/customers/cart/checkout`
+
+Initiates checkout for the current user's cart. Validates cart, creates an order, and initiates payment.
+
+**Request Body:**
+```json
+{
+  "paymentMethod": "CARD", // CARD, USSD, BANK_TRANSFER
+  "currency": "NGN"
+}
+```
+
+**Response:**
+```json
+{
+  "orderId": 123,
+  "paymentStatus": "PENDING", // PENDING, SUCCESSFUL, FAILED, REFUNDED
+  "paymentUrl": null, // (for redirecting to payment gateway, if applicable)
+  "message": "Checkout initiated"
+}
+```
+
+**Logic:**
+- Validates cart and customer.
+- Creates a single order for the cart (can be extended for multi-merchant carts).
+- Initiates payment and returns status.
+- Handles empty cart and missing customer cases with appropriate messages.
+
 ---
 
 ## 📦 Product Management
@@ -527,3 +556,100 @@ Merchants are automatically paid for orders that are PAID and DELIVERED for more
 * Placeholder: Add audit trail for critical actions (e.g., price update, refund approval).
 * Placeholder: Add batch product update endpoint.
 * Placeholder: Add webhook integration for order events.
+
+## 📝 Review Endpoints
+
+### 1. Create Review
+* **POST** `/api/reviews`
+* **Request Body:** Review object
+* `200 OK`: Created review
+
+### 2. Get All Reviews
+* **GET** `/api/reviews`
+* `200 OK`: List of reviews
+
+### 3. Get Reviews by Merchant
+* **GET** `/api/reviews/merchant/{merchantId}`
+* `200 OK`: List of reviews for merchant
+
+---
+
+## 📈 Analytics Endpoints
+
+### 1. Update Analytics
+* **POST** `/api/analytics/{analyticsId}`
+* **Request Body:** Analytics update fields
+* `200 OK`
+
+### 2. Get Analytics
+* **GET** `/api/analytics/{analyticsId}`
+* `200 OK`: Analytics object
+
+---
+
+## 🔑 Auth Endpoints
+
+### 1. Verify Email
+* **GET** `/api/auth/verify-email?token=...`
+* `200 OK`: Success message
+* `400 Bad Request`: Invalid/expired token
+
+### 2. Request Password Reset
+* **POST** `/api/auth/request-password-reset`
+* **Request Body:** `{ "email": "string" }`
+* `200 OK`: Message
+
+### 3. Show Reset Password Form
+* **GET** `/api/auth/reset-password?token=...`
+* `200 OK`: HTML form
+
+---
+
+## 🛒 Merchant Product Endpoints (Extra)
+
+### 1. Batch Upload Merchant Products
+* **POST** `/api/merchants/products/batch-upload`
+* **Request Body:** List of product objects
+* `200 OK`: Success/failure message
+
+### 2. Search Merchant Products
+* **GET** `/api/merchants/products/search?query=...`
+* `200 OK`: List of products
+
+### 3. In-Stock Merchant Products
+* **GET** `/api/merchants/products/in-stock`
+* `200 OK`: List of in-stock products
+
+---
+
+## 🏷️ Coupon Endpoints (Clarified)
+
+### 1. Delete Coupon
+* **DELETE** `/api/v1/merchants/{merchantId}/products/coupons/{couponId}`
+* `200 OK`: `{ success: true }`
+
+---
+
+## 🧾 Miscellaneous
+
+### 1. Customer Login
+* **POST** `/api/v1/customers/login`
+* **Request Body:** `{ "email": "string", "password": "string" }`
+* `200 OK`: `{ token, customer }`
+* `401 Unauthorized`: Invalid credentials
+
+### 2. Delete Customer
+* **DELETE** `/api/v1/customers/{customerId}`
+* `200 OK`: Success message
+
+---
+
+## 🛒 Place Order (Guest/Logged In)
+* **POST** `/api/v1/customers/orders`
+* **Request Body:** Order details (see Order entity)
+* `201 Created`: Order object
+* `400 Bad Request`: Error message
+
+---
+
+# (All endpoints now indexed and documented)

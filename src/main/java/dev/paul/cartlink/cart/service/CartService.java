@@ -11,6 +11,15 @@ import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import dev.paul.cartlink.cart.dto.CheckoutRequest;
+import dev.paul.cartlink.cart.dto.CheckoutResponse;
+import dev.paul.cartlink.payment.model.PaymentStatus;
+import dev.paul.cartlink.payment.service.PaymentService;
+import dev.paul.cartlink.order.service.OrderService;
+import dev.paul.cartlink.order.model.Order;
+import dev.paul.cartlink.payment.model.PaymentMethod;
+import dev.paul.cartlink.payment.model.Payment;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Optional;
 
@@ -20,6 +29,10 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final MerchantProductRepository merchantProductRepository;
+    @Autowired
+    private PaymentService paymentService;
+    @Autowired
+    private OrderService orderService;
 
     @Transactional
     public Cart getOrCreateCart(String cookieId) {
@@ -94,5 +107,30 @@ public class CartService {
 
     public Cart getCart(String cookieId) {
         return getOrCreateCart(cookieId);
+    }
+
+    @Transactional
+    public CheckoutResponse checkoutCart(String cookieId, CheckoutRequest request) {
+        Cart cart = getOrCreateCart(cookieId);
+        if (cart.getItems().isEmpty()) {
+            return new CheckoutResponse(null, PaymentStatus.FAILED, null, "Cart is empty");
+        }
+        // For simplicity, create a single order for the cart (could be per merchant in future)
+        CartItem firstItem = cart.getItems().iterator().next();
+        MerchantProduct merchantProduct = firstItem.getProduct();
+        int totalQuantity = cart.getItems().stream().mapToInt(CartItem::getQuantity).sum();
+        double totalAmount = cart.getItems().stream().mapToDouble(item -> item.getPrice() * item.getQuantity()).sum();
+        // Assume customer is set on cart
+        if (cart.getCustomer() == null) {
+            return new CheckoutResponse(null, PaymentStatus.FAILED, null, "No customer associated with cart");
+        }
+        Order order = orderService.createOrder(merchantProduct, cart.getCustomer(), totalQuantity, null);
+        order.setTotalPrice(totalAmount);
+        orderService.updateOrderStatus(order.getOrderId(), dev.paul.cartlink.order.model.OrderStatus.PENDING);
+        // Generate txRef (could be UUID or orderId-based)
+        String txRef = "TX-ORDER-" + order.getOrderId();
+        Payment payment = paymentService.initiatePayment(order, request.getPaymentMethod(), totalAmount, request.getCurrency(), txRef);
+        // For now, assume paymentUrl is not generated (would be from payment gateway integration)
+        return new CheckoutResponse(order.getOrderId(), payment.getStatus(), null, "Checkout initiated");
     }
 }
