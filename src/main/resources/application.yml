@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    active: 
+    active: dev
 
   datasource:
     url: jdbc:postgresql://localhost:5432/cartlink

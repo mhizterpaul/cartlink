@@ -12,6 +12,8 @@ import java.util.List;
 public interface MerchantProductRepository extends JpaRepository<MerchantProduct, Long> {
     List<MerchantProduct> findByMerchant(Merchant merchant);
 
+    java.util.Optional<MerchantProduct> findByMerchantAndProduct(Merchant merchant, dev.paul.cartlink.product.model.Product product);
+
     List<MerchantProduct> findByMerchantAndProductNameContainingIgnoreCase(Merchant merchant, String productName);
 
     List<MerchantProduct> findByMerchantAndStockGreaterThan(Merchant merchant, Integer stock);
