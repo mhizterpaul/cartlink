@@ -58,7 +58,7 @@ public class LinkAnalyticsControllerIT {
         Merchant savedMerchant = merchantRepository.save(merchant);
         testMerchantId = savedMerchant.getId();
 
-        Product product = new Product();
+        MerchantProduct product = new MerchantProduct();
         product.setName("Analytics Product");
         product.setPrice(50.00);
         product.setStock(20);
@@ -69,13 +69,13 @@ public class LinkAnalyticsControllerIT {
         // Create a ProductLink to get analytics for
         // This assumes a ProductLink entity and repository exist.
         // The actual URL generation might be more complex.
-        ProductLink productLink = new ProductLink();
-        productLink.setProduct(savedProduct);
-        productLink.setMerchant(savedMerchant);
-        productLink.setUrl("https://cart.link/" + System.currentTimeMillis());
-        // Set other necessary fields for ProductLink if any
-        ProductLink savedLink = productLinkRepository.save(productLink);
-        testLinkId = savedLink.getId(); // Assuming ProductLink has an 'id' field
+        Link link = new ProductLink();
+        link.setProduct(savedProduct);
+        link.setMerchant(savedMerchant);
+        link.setUrl("https://cart.link/" + System.currentTimeMillis());
+        // Set other necessary fields for link if any
+        Link savedLink = productLinkRepository.save(Link);
+        testLinkId = savedLink.getId(); // Assuming ink has an 'id' field
     }
 
     @Nested

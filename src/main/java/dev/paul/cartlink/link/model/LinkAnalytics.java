@@ -6,7 +6,7 @@ import dev.paul.cartlink.merchant.model.MerchantProduct;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 @Data
@@ -27,9 +27,18 @@ public class LinkAnalytics {
     @Column(nullable = false)
     private Integer totalUniqueDesktops = 0;
 
-    @ManyToMany
-    @JoinTable(name = "link_analytics_products", joinColumns = @JoinColumn(name = "analyticsId"), inverseJoinColumns = @JoinColumn(name = "id"))
-    private List<MerchantProduct> merchantProducts;
+    @OneToOne(mappedBy = "analytics", fetch = FetchType.LAZY)
+    // 'mappedBy' refers to the 'analytics' field in the Link entity
+    private Link link;
+
+    @OneToMany
+@JoinTable(
+    name = "link_analytics_products",
+    joinColumns = @JoinColumn(name = "analytics_id"),
+    inverseJoinColumns = @JoinColumn(name = "product_id")
+)
+private Set<MerchantProduct> merchantProducts;
+
 
     @ElementCollection
     @CollectionTable(name = "link_analytics_sources", joinColumns = @JoinColumn(name = "analytics_id"))

@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.order.model.Order;
+import dev.paul.cartlink.merchant.model.Merchant;
 
 import java.time.LocalDateTime;
 
@@ -49,9 +50,21 @@ public class Complaint {
 
     private LocalDateTime resolvedAt;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "merchant_id", nullable = false)
+    private Merchant merchant;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         status = ComplaintStatus.PENDING;
+    }
+
+    public Merchant getMerchant() {
+        return merchant;
+    }
+
+    public void setMerchant(Merchant merchant) {
+        this.merchant = merchant;
     }
 }

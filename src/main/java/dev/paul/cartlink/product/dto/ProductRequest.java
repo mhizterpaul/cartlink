@@ -1,9 +1,18 @@
 package dev.paul.cartlink.product.dto;
 
 public class ProductRequest {
+    private Long productId;
     private String name;
-    private Double price;
-    private Integer stock;
+    private String brand;
+    private String category;
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
 
     public String getName() {
         return name;
@@ -13,19 +22,19 @@ public class ProductRequest {
         this.name = name;
     }
 
-    public Double getPrice() {
-        return price;
+    public String getBrand() {
+        return brand;
     }
 
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setBrand(String brand) {
+        this.brand = brand;
     }
 
-    public Integer getStock() {
-        return stock;
+    public String getCategory() {
+        return category;
     }
 
-    public void setStock(Integer stock) {
-        this.stock = stock;
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

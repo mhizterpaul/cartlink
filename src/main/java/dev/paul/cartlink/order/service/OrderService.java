@@ -42,7 +42,7 @@ public class OrderService {
         }
 
         // Fetch LinkAnalytics by analyticsId
-        Link productLink = linkRepository.getReferenceById(linkId);
+        Link link = linkRepository.getReferenceById(linkId);
 
         Order order = new Order();
         order.setMerchantProduct(merchantProduct);
@@ -50,12 +50,12 @@ public class OrderService {
         order.setOrderSize(orderSize);
         order.setStatus(OrderStatus.PENDING);
         order.setPaid(false);
-        order.setLink(productLink);
+        order.setLink(link);
 
         Order savedOrder = orderRepository.save(order);
 
-        if (productLink != null) {
-            linkAnalyticsService.updateTotalOrders(productLink);
+        if (link != null) {
+            linkAnalyticsService.updateTotalOrders(link);
         }
 
         return savedOrder;
@@ -97,7 +97,7 @@ public class OrderService {
     }
 
     public List<Order> getOrdersByProductLink(Long linkId) {
-        return orderRepository.findByProductLink_LinkId(linkId);
+        return orderRepository.findByLinkId(linkId);
     }
 
     // Add method for paginated customer order history

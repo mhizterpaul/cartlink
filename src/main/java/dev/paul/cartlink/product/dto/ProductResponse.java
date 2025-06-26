@@ -3,7 +3,8 @@ package dev.paul.cartlink.product.dto;
 public class ProductResponse {
     private Long productId;
     private String name;
-    private Double price;
+    private String brand;
+    private String category;
 
     public Long getProductId() {
         return productId;
@@ -21,11 +22,19 @@ public class ProductResponse {
         this.name = name;
     }
 
-    public Double getPrice() {
-        return price;
+    public String getBrand() {
+        return brand;
     }
 
-    public void setPrice(Double price) {
-        this.price = price;
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

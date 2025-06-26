@@ -2,6 +2,9 @@ server:
   port: 8080
 
 spring:
+  profiles:
+    active: 
+
   datasource:
     url: jdbc:postgresql://localhost:5432/cartlink
     username: apps
@@ -41,3 +44,8 @@ rsa:
 
 jte:
   developmentMode: true
+
+gg:
+  jte:
+    developmentMode: true
+

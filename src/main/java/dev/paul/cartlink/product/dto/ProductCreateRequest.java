@@ -5,21 +5,28 @@ import lombok.Data;
 @Data
 public class ProductCreateRequest {
 
-    private String category;
-    private String productType;
-    private String brand;
+    private Long productId;
     private String name;
-    private String description;
+    private String brand;
+    private String category;
 
     public ProductCreateRequest() {
     }
 
-    public ProductCreateRequest(String category, String productType, String brand, String name, String description){
-        this.category = category;
-        this.productType = productType;
-        this.brand = brand;
+    public ProductCreateRequest(Long productId, String name, String brand, String category) {
+        this.productId = productId;
         this.name = name;
-        this.description = description;
+        this.brand = brand;
+        this.category = category;
     }
+
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getBrand() { return brand; }
+    public void setBrand(String brand) { this.brand = brand; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
 }

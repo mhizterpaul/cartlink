@@ -11,7 +11,6 @@ import dev.paul.cartlink.order.service.OrderService;
 import dev.paul.cartlink.payment.service.PaymentService;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -27,7 +26,8 @@ public class OrderController {
     private final MerchantProductRepository merchantProductRepository;
     private final PaymentService paymentService;
 
-    public OrderController(OrderService orderService, CustomerService customerService, MerchantProductRepository merchantProductRepository, PaymentService paymentService) {
+    public OrderController(OrderService orderService, CustomerService customerService,
+            MerchantProductRepository merchantProductRepository, PaymentService paymentService) {
         this.orderService = orderService;
         this.customerService = customerService;
         this.merchantProductRepository = merchantProductRepository;
@@ -76,8 +76,8 @@ public class OrderController {
         }
     }
 
-
-    @GetMapping("api/v1/merchants/{merchantId}/orders/{linkId}")
+    // Fix invalid mapping: remove duplicate path and variable
+    @GetMapping("/link/{linkId}")
     public ResponseEntity<?> getOrdersByLink(@PathVariable Long merchantId,
             @PathVariable Long linkId) {
         try {
@@ -117,7 +117,7 @@ public class OrderController {
             // Extract order details
             Long merchantProductId = Long.valueOf(request.get("merchantProductId").toString());
             MerchantProduct merchantProduct = merchantProductRepository.findById(merchantProductId)
-                .orElseThrow(() -> new IllegalArgumentException("MerchantProduct not found"));
+                    .orElseThrow(() -> new IllegalArgumentException("MerchantProduct not found"));
             Integer quantity = Integer.valueOf(request.get("quantity").toString());
             Long productLinkId = request.get("productLinkId") != null
                     ? Long.valueOf(request.get("productLinkId").toString())
@@ -135,11 +135,10 @@ public class OrderController {
             Order order = orderService.updateOrderStatus(orderId, OrderStatus.DELIVERED);
             paymentService.payMerchant(orderId);
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Order marked as delivered and merchant paid",
-                "orderId", order.getOrderId(),
-                "newStatus", order.getStatus()
-            ));
+                    "success", true,
+                    "message", "Order marked as delivered and merchant paid",
+                    "orderId", order.getOrderId(),
+                    "newStatus", order.getStatus()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -2,6 +2,7 @@ package dev.paul.cartlink.link.model;
 
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.model.MerchantProduct;
+import dev.paul.cartlink.link.model.LinkAnalytics;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +27,7 @@ public class Link {
     @JoinColumn(name = "merchant_id", nullable = false)
     private Merchant merchant;
 
+
     @ManyToMany
     @JoinTable(
             name = "link_merchant_products",
@@ -35,6 +37,6 @@ public class Link {
     private Set<MerchantProduct> merchantProducts = new HashSet<>();
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "analytics_id")
+    @JoinColumn(name = "analytics_id", nullable = false)
     private LinkAnalytics analytics;
 }

@@ -4,30 +4,27 @@ import java.util.List;
 import java.util.Map;
 
 public class ProductEditRequest {
+    private Long productId;
     private String name;
-    private String model;
-    private String manufacturer;
-    private Integer stock;
-    private Double price;
-    private List<String> images;
-    private Map<String, String> specifications;
-    private String merchantId;
-    private List<String> videos;
+    private String brand;
+    private String category;
 
     public ProductEditRequest() {
     }
 
-    public ProductEditRequest(String name, String model, String manufacturer, Integer stock, Double price,
-            List<String> images, Map<String, String> specifications, String merchantId, List<String> videos) {
+    public ProductEditRequest(Long productId, String name, String brand, String category) {
+        this.productId = productId;
         this.name = name;
-        this.model = model;
-        this.manufacturer = manufacturer;
-        this.stock = stock;
-        this.price = price;
-        this.images = images;
-        this.specifications = specifications;
-        this.merchantId = merchantId;
-        this.videos = videos;
+        this.brand = brand;
+        this.category = category;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
     }
 
     public String getName() {
@@ -38,67 +35,19 @@ public class ProductEditRequest {
         this.name = name;
     }
 
-    public String getModel() {
-        return model;
+    public String getBrand() {
+        return brand;
     }
 
-    public void setModel(String model) {
-        this.model = model;
+    public void setBrand(String brand) {
+        this.brand = brand;
     }
 
-    public String getManufacturer() {
-        return manufacturer;
+    public String getCategory() {
+        return category;
     }
 
-    public void setManufacturer(String manufacturer) {
-        this.manufacturer = manufacturer;
-    }
-
-    public Integer getStock() {
-        return stock;
-    }
-
-    public void setStock(Integer stock) {
-        this.stock = stock;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public List<String> getImages() {
-        return images;
-    }
-
-    public void setImages(List<String> images) {
-        this.images = images;
-    }
-
-    public Map<String, String> getSpecifications() {
-        return specifications;
-    }
-
-    public void setSpecifications(Map<String, String> specifications) {
-        this.specifications = specifications;
-    }
-
-    public String getMerchantId() {
-        return merchantId;
-    }
-
-    public void setMerchantId(String merchantId) {
-        this.merchantId = merchantId;
-    }
-
-    public List<String> getVideos() {
-        return videos;
-    }
-
-    public void setVideos(List<String> videos) {
-        this.videos = videos;
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

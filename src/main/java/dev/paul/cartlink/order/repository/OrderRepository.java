@@ -37,8 +37,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         return findByMerchantProduct_MerchantAndOrderDateBetween(merchant, startDate, endDate);
     }
 
-    List<Order> findByProductLink_LinkId(Long linkId);
-
+    List<Order> findByLinkId(Long linkId);
+    
     List<Order> findByCustomer(Customer customer);
 
     @Query("SELECT o FROM Order o WHERE o.status = dev.paul.cartlink.order.model.OrderStatus.DELIVERED AND o.paid = true AND o.lastUpdated < :cutoffDate")

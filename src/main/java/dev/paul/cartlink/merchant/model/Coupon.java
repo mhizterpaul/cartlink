@@ -2,6 +2,7 @@ package dev.paul.cartlink.merchant.model;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import dev.paul.cartlink.cart.model.CartItem;
 
 @Entity
 @Table(name = "coupon")
@@ -23,6 +24,14 @@ public class Coupon {
     private Instant validUntil;
     private Integer maxUsage;
     private Integer maxUsers;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cart_item_id")
+    private CartItem cartItem;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "merchant_product_id")
+    private MerchantProduct merchantProduct;
 
     // Getters and setters
     public Long getId() {
@@ -90,10 +99,18 @@ public class Coupon {
     }
 
     public MerchantProduct getMerchantProduct() {
-        return product;
+        return merchantProduct;
     }
 
     public void setMerchantProduct(MerchantProduct merchantProduct) {
-        this.product = merchantProduct;
+        this.merchantProduct = merchantProduct;
+    }
+
+    public CartItem getCartItem() {
+        return cartItem;
+    }
+
+    public void setCartItem(CartItem cartItem) {
+        this.cartItem = cartItem;
     }
 }

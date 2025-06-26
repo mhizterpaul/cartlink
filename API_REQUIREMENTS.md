@@ -186,13 +186,10 @@ Initiates checkout for the current user's cart. Validates cart, creates an order
 {
   "name": "string",
   "model": "string",
-  "manufacturer": "string",
-  "stock": number,
-  "price": number,
-  "coupon": number[],
-  "productDetails": {},
-  "merchantId": "string",
-  "customers": Customer[]
+  "brand": "string",
+
+  "category": "string",
+  "productDetails": {}
 }
 ```
 

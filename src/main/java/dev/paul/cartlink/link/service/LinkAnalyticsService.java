@@ -24,7 +24,7 @@ public class LinkAnalyticsService {
     }
 
     public List<LinkAnalytics> getAnalyticsForLink(Long linkId) {
-        return linkAnalyticsRepository.findByProductLink_LinkId(linkId);
+        return linkAnalyticsRepository.findByLinkId(linkId);
     }
 
     @Transactional

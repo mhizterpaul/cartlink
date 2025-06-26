@@ -41,9 +41,11 @@ public class MerchantProduct {
     @JsonManagedReference("merchantProduct-orders")
     private Set<Order> orders = new HashSet<>();
 
-    @OneToMany(mappedBy = "merchantProduct", cascade = CascadeType.ALL)
-    @JsonManagedReference("merchantProduct-productLinks")
-    private Set<LinkAnalytics> linkAnalytics = new HashSet<>();
+    @OneToMany(cascade = CascadeType.ALL)
+   @JoinColumn(name = "merchant_product_id")
+private Set<LinkAnalytics> linkAnalytics = new HashSet<>();
+
+    
 
     @OneToMany(mappedBy = "merchantProduct", cascade = CascadeType.ALL)
     @JsonBackReference("merchantProduct-coupons")

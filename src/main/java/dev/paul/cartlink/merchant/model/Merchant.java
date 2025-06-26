@@ -68,7 +68,7 @@ public class Merchant implements UserDetails {
     @JsonManagedReference(value = "merchant-products")
     private List<MerchantProduct> merchantProducts;
 
-    @JsonManagedReference("merchant-complaints")
+    @OneToMany(mappedBy = "merchant", cascade = CascadeType.ALL)
     private Set<Complaint> complaints = new HashSet<>();
 
     private boolean emailVerified = false;
