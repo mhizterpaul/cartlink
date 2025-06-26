@@ -5,8 +5,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.FileCopyUtils;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPrivateKey;
@@ -19,20 +24,32 @@ import java.util.Base64;
 @Configuration
 @ConfigurationProperties(prefix = "rsa")
 public class RsaKeyProperties {
-    private String privateKey;
-    private String publicKey;
+    private String privateKeyLocation;
+    private String publicKeyLocation;
+    private final ResourceLoader resourceLoader;
 
-    public void setPrivateKey(String privateKey) {
-        this.privateKey = privateKey;
+    public RsaKeyProperties(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
     }
 
-    public void setPublicKey(String publicKey) {
-        this.publicKey = publicKey;
+    public void setPrivateKey(String privateKeyLocation) {
+        this.privateKeyLocation = privateKeyLocation;
+    }
+
+    public void setPublicKey(String publicKeyLocation) {
+        this.publicKeyLocation = publicKeyLocation;
+    }
+
+    private String readKeyFromResource(String location) throws IOException {
+        Resource resource = resourceLoader.getResource(location);
+        try (Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
+            return FileCopyUtils.copyToString(reader);
+        }
     }
 
     @Bean
     public RSAPrivateKey privateKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        String privateKeyPEM = new String(Files.readAllBytes(Paths.get(privateKey)))
+        String privateKeyPEM = readKeyFromResource(privateKeyLocation)
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
@@ -45,7 +62,7 @@ public class RsaKeyProperties {
 
     @Bean
     public RSAPublicKey publicKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        String publicKeyPEM = new String(Files.readAllBytes(Paths.get(publicKey)))
+        String publicKeyPEM = readKeyFromResource(publicKeyLocation)
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");

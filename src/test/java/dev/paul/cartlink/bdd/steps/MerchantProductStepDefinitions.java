@@ -169,7 +169,7 @@ public class MerchantProductStepDefinitions {
         logger.info("Authenticated Merchant DELETE to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
-    @Given("the following product is added by the merchant:")
+    @Given("the following merchant product is added by the merchant, referencing an existing Product:")
     public void the_following_product_is_added_by_the_merchant(DataTable dataTable) {
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
         for (Map<String, String> row : rows) {
@@ -183,7 +183,7 @@ public class MerchantProductStepDefinitions {
         }
     }
 
-    @Given("the following product is added by the merchant and its merchantProductId is stored as {string}:")
+    @Given("the following merchant product is added by the merchant and its merchantProductId is stored as {string}, referencing an existing Product:")
     public void the_following_product_is_added_and_id_stored(String sharedKey, DataTable dataTable) {
          List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
          // Assuming one row for simplicity for this step

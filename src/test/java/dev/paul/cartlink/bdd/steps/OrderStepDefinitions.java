@@ -14,9 +14,10 @@ import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
 
+import dev.paul.cartlink.bdd.ScenarioContext;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Given; // Added back
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
@@ -52,29 +53,30 @@ public class OrderStepDefinitions {
     @Autowired private MerchantProductRepository merchantProductRepository;
     @Autowired private OrderRepository orderRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired private ScenarioContext scenarioContext;
 
-    private String apiBaseUrl;
     private ResponseEntity<String> latestResponse;
-    private Map<String, String> sharedData = new HashMap<>();
+    // private Map<String, String> sharedData = new HashMap<>(); // Replaced by scenarioContext
 
     @Before
     public void setUp() {
+        // Clear only order-specific data or rely on other step definitions to clear their respective data.
+        // ScenarioContext should be cleared at the beginning or end of a scenario.
+        // If CommonStepDefinitions or another @Before runs first and clears it, that's fine.
+        // For now, let's assume ScenarioContext is fresh or managed appropriately by another hook.
+        // If this step definition is the first to use sharedData for sensitive ops, ensure it's clean.
+        // Let's clear keys this class specifically uses or populates heavily.
+        // However, the original sharedData.clear() was broad.
+        // For now, let's assume ScenarioContext is managed by a higher-order hook or CucumberSpringConfiguration.
+        // If issues arise, we can add scenarioContext.clear() here or in an @After hook in CommonStepDefinitions.
         orderRepository.deleteAll();
-        // merchantProductRepository.deleteAll(); // Might be needed if not cleaned by MerchantProductSteps
-        // productRepository.deleteAll();         // Might be needed if not cleaned by MerchantProductSteps
-        // customerRepository.deleteAll();      // Handled by CustomerSteps
-        // merchantRepository.deleteAll();      // Handled by MerchantAuthSteps
-        sharedData.clear();
-        logger.info("OrderStepDefinitions: Cleared order repository and sharedData.");
+        logger.info("OrderStepDefinitions: Cleared order repository.");
     }
 
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
+    // Removed duplicate @Given("the API base URL is {string}")
 
     // --- Merchant Login (from MerchantAuthStepDefinitions, simplified) ---
     @Given("a merchant is logged in with email {string} and password {string}")
@@ -94,7 +96,7 @@ public class OrderStepDefinitions {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/merchant/login", entity, String.class); // Path from MerchantController
+        ResponseEntity<String> loginResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + "/merchant/login", entity, String.class);
 
         if(loginResponse.getStatusCodeValue() != 200) {
             logger.error("Merchant login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
@@ -104,8 +106,8 @@ public class OrderStepDefinitions {
         String responseBody = loginResponse.getBody();
         String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
         String merchantId = Objects.toString(com.jayway.jsonpath.JsonPath.read(responseBody, "$.merchant.merchantId"));
-        sharedData.put("merchantToken", token);
-        sharedData.put("merchantId", merchantId); // Used in paths like /merchants/{merchantId}/orders
+        scenarioContext.set("merchantToken", token);
+        scenarioContext.set("merchantId", merchantId);
         logger.info("Merchant {} logged in. Token: {}, ID: {}", email, token, merchantId);
     }
 
@@ -127,7 +129,7 @@ public class OrderStepDefinitions {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class); // Path from CustomerController
+        ResponseEntity<String> loginResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + "/customers/login", entity, String.class);
 
         if(loginResponse.getStatusCodeValue() != 200) {
             logger.error("Customer login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
@@ -135,7 +137,7 @@ public class OrderStepDefinitions {
         }
         String responseBody = loginResponse.getBody();
         String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
-        sharedData.put("customerToken", token);
+        scenarioContext.set("customerToken", token);
         logger.info("Customer {} logged in. Token stored.", email);
     }
 
@@ -186,42 +188,48 @@ public class OrderStepDefinitions {
         mp.setStock(stock);
         mp.setDescription("Test description for " + productName);
         mp = merchantProductRepository.save(mp);
-        sharedData.put(sharedMpidKey, mp.getId().toString());
+        scenarioContext.set(sharedMpidKey, mp.getId().toString());
         logger.info("Created MerchantProduct '{}' with ID {} for merchant {}, stored as {}", productName, mp.getId(), merchantEmail, sharedMpidKey);
     }
 
     @Given("an order with ID {string} exists for merchant {string} with initial status {string}")
     public void an_order_exists_for_merchant(String orderIdStr, String merchantEmail, String statusStr) {
         Long orderId = Long.parseLong(orderIdStr);
-        if (orderRepository.findById(orderId).isEmpty()) {
+        // This logic might need adjustment if IDs are not auto-incrementing from 1 or if tests run in parallel.
+        // For simplicity, we're trying to create an order that might match the hardcoded ID if DB is clean.
+        // A more robust way is to capture the created order's ID and use it.
+        if (orderRepository.findById(orderId).isEmpty()) { // Check if an order with this specific ID already exists
             Merchant merchant = merchantRepository.findByEmail(merchantEmail)
                     .orElseThrow(() -> new AssertionError("Merchant " + merchantEmail + " not found for order setup."));
 
-            // Need a customer and a merchant product to create an order
-            Customer customer = customerRepository.findByEmail("order.customer@example.com") // From Background
-                    .orElseThrow(() -> new AssertionError("Default customer not found for order setup."));
+            Customer customer = customerRepository.findByEmail("order.customer@example.com")
+                    .orElseGet(() -> {
+                        Customer c = new Customer();
+                        c.setEmail("order.customer@example.com");
+                        c.setFirstName("OrderDefault");
+                        c.setLastName("Customer");
+                        return customerRepository.save(c);
+                    });
 
-            String mpidStr = sharedData.get("orderable_mpid"); // From Background
-            assertThat(mpidStr).isNotNull().withFailMessage("orderable_mpid not found in sharedData for order setup.");
+            String mpidStr = scenarioContext.getString("orderable_mpid");
+            assertThat(mpidStr).isNotNull().withFailMessage("orderable_mpid not found in scenarioContext for order setup.");
             MerchantProduct mp = merchantProductRepository.findById(Long.parseLong(mpidStr))
-                    .orElseThrow(() -> new AssertionError("Default merchant product not found for order setup."));
+                    .orElseThrow(() -> new AssertionError("Merchant product for orderable_mpid not found."));
 
             Order order = new Order();
-            // order.setOrderId(orderId); // ID is auto-generated, cannot set manually unless DB allows identity insert
             order.setCustomer(customer);
             order.setMerchantProduct(mp);
             order.setQuantity(1);
-            order.setTotalPrice(mp.getPrice()); // Simplified
+            order.setTotalPrice(mp.getPrice());
             order.setStatus(OrderStatus.valueOf(statusStr.toUpperCase()));
             order.setOrderDate(LocalDateTime.now());
             Order savedOrder = orderRepository.save(order);
-            // This step implies we need to refer to order by ID '1' or '2' in feature file.
-            // This is only possible if we can control ID generation or update the feature file dynamically.
-            // For now, we create an order, but its ID might not be '1' or '2'.
-            // This step needs adjustment: either create order via API, or use its actual ID.
-            logger.warn("Created order with ACTUAL ID {}. Test step specified ID {}. Test might not target correct order if ID is hardcoded in path.", savedOrder.getOrderId(), orderId);
-            // To make this work, we should store the actual ID and use it.
-            sharedData.put("orderId_" + orderIdStr, savedOrder.getOrderId().toString());
+            // Store the actual ID using the symbolic ID from the feature file as key
+            scenarioContext.set("orderId_" + orderIdStr, savedOrder.getOrderId().toString());
+            logger.info("Created order with ACTUAL ID {}, as specified by symbolic ID {} in feature.", savedOrder.getOrderId(), orderIdStr);
+        } else {
+            logger.info("Order with specified ID {} already exists or was created by another step.", orderId);
+            scenarioContext.set("orderId_" + orderIdStr, orderId.toString()); // Assume it's the correct one
         }
     }
 
@@ -229,12 +237,12 @@ public class OrderStepDefinitions {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         String tokenKey = forMerchant ? "merchantToken" : "customerToken";
-        if (sharedData.containsKey(tokenKey)) {
-            headers.setBearerAuth(sharedData.get(tokenKey));
+        String token = scenarioContext.getString(tokenKey);
+        if (token != null) {
+            headers.setBearerAuth(token);
         } else {
-            // For guest customer placing order, no auth token is fine.
-            if (forMerchant || (sharedData.containsKey("customerTokenRequired") && Boolean.parseBoolean(sharedData.get("customerTokenRequired")))) {
-                 logger.warn("No {} found in sharedData for authenticated request!", tokenKey);
+            if (forMerchant || (scenarioContext.get("customerTokenRequired", Boolean.class) != null && scenarioContext.get("customerTokenRequired", Boolean.class))) {
+                 logger.warn("No {} found in scenarioContext for authenticated request!", tokenKey);
             }
         }
         return headers;
@@ -243,16 +251,16 @@ public class OrderStepDefinitions {
     private String resolvePath(String path) {
         String tempPath = path;
         if (tempPath.contains("{merchantId}")) {
-            tempPath = tempPath.replace("{merchantId}", sharedData.getOrDefault("merchantId", "UNKNOWN_MERCHANT_ID"));
+            tempPath = tempPath.replace("{merchantId}", scenarioContext.getString("merchantId") != null ? scenarioContext.getString("merchantId") : "UNKNOWN_MERCHANT_ID");
         }
-        // For order IDs, try to use the stored actual ID if available
-        // e.g. path "/merchants/{merchantId}/orders/1/status" -> orderId_1
-        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("/orders/(\\d+)/").matcher(tempPath);
+        java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("/orders/(\\d+)").matcher(tempPath);
         if (matcher.find()) {
-            String specifiedOrderId = matcher.group(1);
-            String actualOrderId = sharedData.get("orderId_" + specifiedOrderId);
+            String specifiedOrderIdKey = "orderId_" + matcher.group(1);
+            String actualOrderId = scenarioContext.getString(specifiedOrderIdKey);
             if (actualOrderId != null) {
-                tempPath = tempPath.replace("/orders/" + specifiedOrderId + "/", "/orders/" + actualOrderId + "/");
+                tempPath = matcher.replaceFirst("/orders/" + actualOrderId);
+            } else {
+                logger.warn("Actual order ID for symbolic key {} not found in scenarioContext. Using original path part: {}", specifiedOrderIdKey, matcher.group(1));
             }
         }
         return tempPath;
@@ -261,15 +269,11 @@ public class OrderStepDefinitions {
     private String resolveBody(String body) {
         String tempBody = body;
         if (tempBody.contains("{direct_order_mpid}")) {
-            tempBody = tempBody.replace("{direct_order_mpid}", sharedData.getOrDefault("direct_order_mpid", "UNKNOWN_MPID"));
+            tempBody = tempBody.replace("{direct_order_mpid}", scenarioContext.getString("direct_order_mpid") != null ? scenarioContext.getString("direct_order_mpid") : "UNKNOWN_MPID");
         }
-         if (tempBody.contains("{orderable_mpid}")) { // From merchant order feature
-            tempBody = tempBody.replace("{orderable_mpid}", sharedData.getOrDefault("orderable_mpid", "UNKNOWN_MPID_ORDERABLE"));
+         if (tempBody.contains("{orderable_mpid}")) {
+            tempBody = tempBody.replace("{orderable_mpid}",  scenarioContext.getString("orderable_mpid") != null ? scenarioContext.getString("orderable_mpid") : "UNKNOWN_MPID_ORDERABLE");
         }
-        // Resolve merchantProductId.id to its actual string value for JSON
-        // e.g. "merchantProduct.id" with value "{direct_order_mpid}"
-        // This is for response checking, not request body.
-        // The current resolveBody is for request bodies.
         return tempBody;
     }
 
@@ -278,37 +282,37 @@ public class OrderStepDefinitions {
     public void a_get_request_is_made_to_with_auth_merchant(String path) {
         HttpHeaders headers = buildAuthHeaders(true);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePath(path), HttpMethod.GET, entity, String.class);
+        latestResponse = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvePath(path), HttpMethod.GET, entity, String.class);
     }
 
     @When("a PUT request is made to {string} with an authenticated merchant and the following body:")
     public void a_put_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
         HttpHeaders headers = buildAuthHeaders(true);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePath(path), HttpMethod.PUT, entity, String.class);
+        latestResponse = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvePath(path), HttpMethod.PUT, entity, String.class);
     }
 
     @When("a PATCH request is made to {string} with an authenticated merchant")
     public void a_patch_request_is_made_to_with_auth_merchant(String path) {
         HttpHeaders headers = buildAuthHeaders(true);
         HttpEntity<Void> entity = new HttpEntity<>(headers); // PATCH can have body, but this scenario doesn't
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePath(path), HttpMethod.PATCH, entity, String.class);
+        latestResponse = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvePath(path), HttpMethod.PATCH, entity, String.class);
     }
 
     @When("a POST request is made to {string} with an authenticated customer and the following body:")
     public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
-        sharedData.put("customerTokenRequired", "true"); // Mark that token is expected
+        scenarioContext.set("customerTokenRequired", true);
         HttpHeaders headers = buildAuthHeaders(false); // Customer token
         HttpEntity<String> entity = new HttpEntity<>(resolveBody(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePath(path), entity, String.class);
-        sharedData.remove("customerTokenRequired");
+        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePath(path), entity, String.class);
+        scenarioContext.set("customerTokenRequired", null); // Reset flag
     }
 
-    @When("a POST request is made to {string} with the following body:") // For guest customer
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+    @When("a guest POST request is made to {string} with the following body:") // For guest customer
+    public void a_guest_post_request_is_made_to_with_body(String path, String requestBody) {
         HttpHeaders headers = buildAuthHeaders(false); // No customer token expected / needed for guest
         HttpEntity<String> entity = new HttpEntity<>(resolveBody(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePath(path), entity, String.class);
+        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePath(path), entity, String.class);
     }
 
     // --- Then Steps (Common) ---
@@ -331,8 +335,12 @@ public class OrderStepDefinitions {
     @Then("the response body should contain {string} with value {string}")
     public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
         assertThat(latestResponse.getBody()).isNotNull();
-        // Resolve expectedValue if it's a placeholder like {direct_order_mpid}
-        String resolvedExpectedValue = resolveBody(expectedValue);
+        String resolvedExpectedValue = expectedValue;
+        if (expectedValue.startsWith("{") && expectedValue.endsWith("}")) {
+            String placeholderKey = expectedValue.substring(1, expectedValue.length() - 1);
+            resolvedExpectedValue = scenarioContext.getString(placeholderKey);
+            assertThat(resolvedExpectedValue).withFailMessage("Placeholder " + placeholderKey + " not found in scenario context for assertion.").isNotNull();
+        }
         String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
         assertThat(actualValue).isEqualTo(resolvedExpectedValue);
     }

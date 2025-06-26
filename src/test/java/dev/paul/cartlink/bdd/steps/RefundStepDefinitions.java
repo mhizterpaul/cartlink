@@ -119,15 +119,17 @@ public class RefundStepDefinitions {
         });
 
         List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase("RefundProduct");
-        Product product = existingProducts.isEmpty() ? null : existingProducts.get(0);
-        if (product == null) {
+        Product tempProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
+        if (tempProduct == null) {
             Product p = new Product(); p.setName("RefundProduct"); p.setBrand("Brand"); p.setCategory("Category");
-            product = productRepository.save(p);
+            tempProduct = productRepository.save(p);
         }
 
+        final Product finalProduct = tempProduct; // final or effectively final
+
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, product).orElseGet(()-> {
-            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(merchant); mp.setProduct(product);
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, finalProduct).orElseGet(()-> {
+            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(merchant); mp.setProduct(finalProduct); // use finalProduct
             mp.setPrice(20.0); mp.setStock(50); mp.setDescription("Product for refund testing");
             return merchantProductRepository.save(mp);
         });

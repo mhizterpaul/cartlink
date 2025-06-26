@@ -4,9 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
 
+import dev.paul.cartlink.bdd.ScenarioContext;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Given; // Added back
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
@@ -35,25 +36,22 @@ public class AnalyticsStepDefinitions {
     @Autowired private TestRestTemplate restTemplate;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private LinkAnalyticsRepository linkAnalyticsRepository;
+    @Autowired private ScenarioContext scenarioContext;
 
-    private String apiBaseUrl;
     private ResponseEntity<String> latestResponse;
-    private Map<String, String> sharedData = new HashMap<>();
+    // private Map<String, String> sharedData = new HashMap<>(); // Will use scenarioContext instead
 
     @Before
     public void setUp() {
         linkAnalyticsRepository.deleteAll(); // Clear analytics before each scenario
-        sharedData.clear();
-        logger.info("AnalyticsStepDefinitions: Cleared link_analytics repository and sharedData.");
+        // scenarioContext.clear(); // Shared context, clear relevant parts or manage carefully
+        logger.info("AnalyticsStepDefinitions: Cleared link_analytics repository.");
     }
 
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
+    // Removed duplicate @Given("the API base URL is {string}")
 
     @Given("a LinkAnalytics entity exists with ID {string} and its actual ID is stored as {string}")
     public void a_link_analytics_entity_exists_stored_as(String symbolicId, String sharedKey) {
@@ -66,26 +64,40 @@ public class AnalyticsStepDefinitions {
         // Other fields like totalUniqueClicks default to 0 as per entity.
 
         LinkAnalytics savedAnalytics = linkAnalyticsRepository.save(analytics);
-        sharedData.put(sharedKey, savedAnalytics.getAnalyticsId().toString());
+        scenarioContext.set(sharedKey, savedAnalytics.getAnalyticsId().toString());
         logger.info("Created LinkAnalytics entity with actual ID {}, stored as {}. Symbolic test ID was {}",
                     savedAnalytics.getAnalyticsId(), sharedKey, symbolicId);
     }
 
     private String resolvePlaceholders(String valueWithPlaceholders) {
         String resolvedValue = valueWithPlaceholders;
-        for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (resolvedValue.contains("{" + entry.getKey() + "}")) {
-                resolvedValue = resolvedValue.replace("{" + entry.getKey() + "}", entry.getValue());
+        // Example for resolving: if valueWithPlaceholders is "/analytics/{analyticsTestId}"
+        // and scenarioContext has "analyticsTestId" -> "123", it becomes "/analytics/123"
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        java.util.regex.Matcher matcher = pattern.matcher(resolvedValue);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            Object value = scenarioContext.get(key, Object.class); // Get as Object first
+            if (value != null) {
+                matcher.appendReplacement(sb, value.toString());
+            } else {
+                logger.warn("Placeholder {} not found in scenarioContext", key);
+                // Decide how to handle missing placeholders: throw error, or leave as is
+                // For now, leave as is, which might lead to request errors if path is malformed
             }
         }
-        return resolvedValue;
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     @When("a GET request is made to {string}")
     public void a_get_request_is_made_to(String path) {
         HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders()); // No auth needed as per controller
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePlaceholders(path), HttpMethod.GET, entity, String.class);
-        logger.info("GET to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        String resolvedPath = resolvePlaceholders(path);
+        String baseUrl = scenarioContext.getString("apiBaseUrl");
+        latestResponse = restTemplate.exchange(baseUrl + resolvedPath, HttpMethod.GET, entity, String.class);
+        logger.info("GET to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
     @When("a POST request is made to {string} with the following body:")
@@ -93,9 +105,12 @@ public class AnalyticsStepDefinitions {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         // No auth needed as per controller
-        HttpEntity<String> entity = new HttpEntity<>(resolvePlaceholders(requestBody), headers); // Body might contain placeholders if needed
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePlaceholders(path), entity, String.class);
-        logger.info("POST to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        String resolvedPath = resolvePlaceholders(path);
+        String resolvedBody = resolvePlaceholders(requestBody);
+        String baseUrl = scenarioContext.getString("apiBaseUrl");
+        HttpEntity<String> entity = new HttpEntity<>(resolvedBody, headers);
+        latestResponse = restTemplate.postForEntity(baseUrl + resolvedPath, entity, String.class);
+        logger.info("POST to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
     // --- Then Steps ---

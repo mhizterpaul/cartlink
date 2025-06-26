@@ -122,20 +122,22 @@ public class ComplaintStepDefinitions {
         });
 
         List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase("ComplaintProduct");
-        Product product = existingProducts.isEmpty() ? null : existingProducts.get(0);
-        if (product == null) {
+        Product tempProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
+        if (tempProduct == null) {
             Product p = new Product();
             p.setName("ComplaintProduct");
             p.setBrand("Brand");
             p.setCategory("Category");
-            product = productRepository.save(p);
+            tempProduct = productRepository.save(p);
         }
 
+        final Product finalProduct = tempProduct; // final or effectively final variable
+
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, product).orElseGet(()-> {
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, finalProduct).orElseGet(()-> {
             MerchantProduct mp = new MerchantProduct();
             mp.setMerchant(merchant);
-            mp.setProduct(product);
+            mp.setProduct(finalProduct); // Use finalProduct here
             mp.setPrice(10.0);
             mp.setStock(100);
             mp.setDescription("Product for complaint testing");
