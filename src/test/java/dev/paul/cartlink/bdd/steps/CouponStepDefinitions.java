@@ -180,77 +180,79 @@ public class CouponStepDefinitions {
         return resolvedPath;
     }
 
-    @When("a POST request is made to {string} with an authenticated merchant and the following body:")
-    public void a_post_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedHeaders();
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers); // Assuming body doesn't need placeholder resolution here
-        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
-        scenarioContext.set("latestResponse", response);
-        // Store couponId if it's a create response
-        try {
-            if (response.getStatusCodeValue() == 201 && response.getBody().contains("couponId")) {
-                 String couponId = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$.couponId"), null);
-                 if (couponId != null) scenarioContext.set("lastCouponId", couponId); // Store in ScenarioContext
-            }
-        } catch (Exception e) { /* ignore if not relevant */ }
-    }
+    // This step is now handled by the generalized POST in CommonStepDefinitions.java
+    // @When("a POST request is made to {string} with an authenticated merchant and the following body:")
+    // public void a_post_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     HttpHeaders headers = buildAuthenticatedHeaders();
+    //     HttpEntity<String> entity = new HttpEntity<>(requestBody, headers); // Assuming body doesn't need placeholder resolution here
+    //     ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    //     // Store couponId if it's a create response
+    //     try {
+    //         if (response.getStatusCodeValue() == 201 && response.getBody().contains("couponId")) {
+    //              String couponId = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$.couponId"), null);
+    //              if (couponId != null) scenarioContext.set("lastCouponId", couponId); // Store in ScenarioContext
+    //         }
+    //     } catch (Exception e) { /* ignore if not relevant */ }
+    // }
 
-    @When("a GET request is made to {string} with an authenticated merchant")
-    public void a_get_request_is_made_to_with_auth_merchant(String path) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedHeaders();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-        scenarioContext.set("latestResponse", response);
-    }
+    // @When("a GET request is made to {string} with an authenticated merchant")
+    // public void a_get_request_is_made_to_with_auth_merchant(String path) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     HttpHeaders headers = buildAuthenticatedHeaders();
+    //     HttpEntity<Void> entity = new HttpEntity<>(headers);
+    //     ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    // }
 
-    @When("a DELETE request is made to {string} with an authenticated merchant")
-    public void a_delete_request_is_made_to_with_auth_merchant(String path) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedHeaders();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.DELETE, entity, String.class);
-        scenarioContext.set("latestResponse", response);
-    }
+    // @When("a DELETE request is made to {string} with an authenticated merchant")
+    // public void a_delete_request_is_made_to_with_auth_merchant(String path) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     HttpHeaders headers = buildAuthenticatedHeaders();
+    //     HttpEntity<Void> entity = new HttpEntity<>(headers);
+    //     ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.DELETE, entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    // }
 
-    @When("a POST request is made to {string} with the following body:") // Unauthenticated
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
-        scenarioContext.set("latestResponse", response);
-    }
+    // This step is now handled by the generalized POST in CommonStepDefinitions.java
+    // @When("a POST request is made to {string} with the following body:") // Unauthenticated
+    // public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     HttpHeaders headers = new HttpHeaders();
+    //     headers.setContentType(MediaType.APPLICATION_JSON);
+    //     HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+    //     ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    // }
 
     // --- Then Steps ---
 
-    @Then("the response body should contain a {string}")
-    public void the_response_body_should_contain_a_key(String jsonPath) {
-        @SuppressWarnings("unchecked")
-        ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class); // Prefer context
-        assertThat(localLatestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath);
-    }
+    // @Then("the response body should contain a {string}")
+    // public void the_response_body_should_contain_a_key(String jsonPath) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class); // Prefer context
+    //     assertThat(localLatestResponse.getBody()).isNotNull();
+    //     com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath);
+    // }
 
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        @SuppressWarnings("unchecked")
-        ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
-        assertThat(localLatestResponse.getBody()).isNotNull();
-        String resolvedExpectedValue = expectedValue;
-        if (expectedValue.startsWith("{") && expectedValue.endsWith("}")) {
-            String placeholderKey = expectedValue.substring(1, expectedValue.length() - 1);
-            if (scenarioContext.containsKey(placeholderKey)) {
-                resolvedExpectedValue = scenarioContext.getString(placeholderKey);
-            } else {
-                 logger.warn("Placeholder value for key '{}' not found in ScenarioContext, using literal: {}", placeholderKey, expectedValue);
-            }
-        }
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath), "");
-        assertThat(actualValue).isEqualTo(resolvedExpectedValue);
-    }
+    // @Then("the response body should contain {string} with value {string}")
+    // public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(localLatestResponse.getBody()).isNotNull();
+    //     String resolvedExpectedValue = expectedValue;
+    //     if (expectedValue.startsWith("{") && expectedValue.endsWith("}")) {
+    //         String placeholderKey = expectedValue.substring(1, expectedValue.length() - 1);
+    //         if (scenarioContext.containsKey(placeholderKey)) {
+    //             resolvedExpectedValue = scenarioContext.getString(placeholderKey);
+    //         } else {
+    //              logger.warn("Placeholder value for key '{}' not found in ScenarioContext, using literal: {}", placeholderKey, expectedValue);
+    //         }
+    //     }
+    //     String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath), "");
+    //     assertThat(actualValue).isEqualTo(resolvedExpectedValue);
+    // }
 
     // This step is now in CommonStepDefinitions.java
     // @Then("the response body should contain {string} with number value {string}")
@@ -273,17 +275,17 @@ public class CouponStepDefinitions {
     //     assertThat(list).isNotNull().isEmpty();
     // }
 
-    @Then("the response body should be a list with {int} item(s)")
-    public void the_response_body_should_be_a_list_with_items(int count) {
-        @SuppressWarnings("unchecked")
-        ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
-        assertThat(localLatestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(localLatestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().hasSize(count);
-    }
+    // @Then("the response body should be a list with {int} item(s)")
+    // public void the_response_body_should_be_a_list_with_items(int count) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(localLatestResponse.getBody()).isNotNull();
+    //     List<?> list = com.jayway.jsonpath.JsonPath.parse(localLatestResponse.getBody()).read("$");
+    //     assertThat(list).isNotNull().hasSize(count);
+    // }
 
-    @Then("the response body should contain an {string} field")
-    public void the_response_body_should_contain_an_error_field(String fieldName) {
-        the_response_body_should_contain_a_key(fieldName);
-    }
+    // @Then("the response body should contain an {string} field")
+    // public void the_response_body_should_contain_an_error_field(String fieldName) {
+    //     the_response_body_should_contain_a_key(fieldName);
+    // }
 }

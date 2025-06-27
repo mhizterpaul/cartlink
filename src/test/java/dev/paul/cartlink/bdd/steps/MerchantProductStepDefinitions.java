@@ -2,6 +2,7 @@ package dev.paul.cartlink.bdd.steps;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.paul.cartlink.customer.repository.CustomerRepository; // Added import
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.product.repository.ProductRepository;
@@ -56,12 +57,39 @@ public class MerchantProductStepDefinitions {
     private MerchantProductRepository merchantProductRepository; // To clean up merchant_products
 
     @Autowired
+    private CustomerRepository customerRepository; // Added to pass to CommonStepDefinitions
+
+    @Autowired
     private ScenarioContext scenarioContext;
+    private final CommonStepDefinitions commonSteps; // Added for DI
 
     // Shared state
     // private String apiBaseUrl; // Removed
-    private ResponseEntity<String> latestResponse;
+    // private ResponseEntity<String> latestResponse; // Will use ScenarioContext
     private Map<String, String> sharedData = new HashMap<>(); // For auth tokens, merchantId, merchantProductIds
+
+    @Autowired // Ensure Spring injects dependencies
+    public MerchantProductStepDefinitions(
+            TestRestTemplate restTemplate,
+            ObjectMapper objectMapper,
+            MerchantRepository merchantRepository,
+            PasswordEncoder passwordEncoder,
+            ProductRepository productRepository,
+            MerchantProductRepository merchantProductRepository,
+            CustomerRepository customerRepository,
+            ScenarioContext scenarioContext,
+            CommonStepDefinitions commonSteps // Added for DI
+    ) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+        this.merchantRepository = merchantRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.productRepository = productRepository;
+        this.merchantProductRepository = merchantProductRepository;
+        this.customerRepository = customerRepository;
+        this.scenarioContext = scenarioContext;
+        this.commonSteps = commonSteps; // Added for DI
+    }
 
     @Before
     public void setUp() {
@@ -73,7 +101,8 @@ public class MerchantProductStepDefinitions {
                                         // Be cautious if scenarios depend on merchants from other features.
                                         // For isolated merchant product tests, this is fine.
         sharedData.clear();
-        logger.info("MerchantProductStepDefinitions: Cleared repositories and sharedData.");
+        scenarioContext.clear(); // Clear scenario context as well
+        logger.info("MerchantProductStepDefinitions: Cleared repositories, sharedData, and ScenarioContext.");
     }
 
     @After
@@ -165,31 +194,34 @@ public class MerchantProductStepDefinitions {
         return headers;
     }
 
-    @When("a POST request is made to {string} with an authenticated merchant and the following body:")
-    public void a_post_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedHeaders();
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
-        logger.info("Authenticated Merchant POST to {}: Status {}, Body {}", path, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-        // Store merchantProductId if present in response
-        try {
-            String mpId = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$.merchantProductId"), null);
-            if (mpId != null) {
-                sharedData.put("lastMerchantProductId", mpId);
-                logger.info("Stored lastMerchantProductId: {}", mpId);
-            }
-        } catch (Exception e) { /* Path not found, or not an add product response */ }
-    }
+    // This step is now handled by the generalized POST in CommonStepDefinitions.java
+    // @When("a POST request is made to {string} with an authenticated merchant and the following body:")
+    // public void a_post_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     HttpHeaders headers = buildAuthenticatedHeaders();
+    //     HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+    //     ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    //     logger.info("Authenticated Merchant POST to {}: Status {}, Body {}", path, response.getStatusCodeValue(), response.getBody());
+    //     // Store merchantProductId if present in response
+    //     try {
+    //         String mpId = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$.merchantProductId"), null);
+    //         if (mpId != null) {
+    //             sharedData.put("lastMerchantProductId", mpId);
+    //             logger.info("Stored lastMerchantProductId: {}", mpId);
+    //         }
+    //     } catch (Exception e) { /* Path not found, or not an add product response */ }
+    // }
 
-    @When("a GET request is made to {string} with an authenticated merchant")
-    public void a_get_request_is_made_to_with_auth_merchant(String path) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedHeaders();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
-        logger.info("Authenticated Merchant GET to {}: Status {}, Body {}", path, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
+    // @When("a GET request is made to {string} with an authenticated merchant")
+    // public void a_get_request_is_made_to_with_auth_merchant(String path) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     HttpHeaders headers = buildAuthenticatedHeaders();
+    //     HttpEntity<Void> entity = new HttpEntity<>(headers);
+    //     ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    //     logger.info("Authenticated Merchant GET to {}: Status {}, Body {}", path, response.getStatusCodeValue(), response.getBody());
+    // }
 
     @When("a PUT request is made to {string} with an authenticated merchant and the following body:")
     public void a_put_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
@@ -197,27 +229,34 @@ public class MerchantProductStepDefinitions {
         String resolvedPath = resolveMerchantProductPathVariables(path);
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
-        logger.info("Authenticated Merchant PUT to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("Authenticated Merchant PUT to {}: Status {}, Body {}", resolvedPath, response.getStatusCodeValue(), response.getBody());
     }
 
-    @When("a DELETE request is made to {string} with an authenticated merchant")
-    public void a_delete_request_is_made_to_with_auth_merchant(String path) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        String resolvedPath = resolveMerchantProductPathVariables(path);
-        HttpHeaders headers = buildAuthenticatedHeaders();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
-        logger.info("Authenticated Merchant DELETE to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
+    // @When("a DELETE request is made to {string} with an authenticated merchant")
+    // public void a_delete_request_is_made_to_with_auth_merchant(String path) {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     String resolvedPath = resolveMerchantProductPathVariables(path);
+    //     HttpHeaders headers = buildAuthenticatedHeaders();
+    //     HttpEntity<Void> entity = new HttpEntity<>(headers);
+    //     ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
+    //     scenarioContext.set("latestResponse", response);
+    //     logger.info("Authenticated Merchant DELETE to {}: Status {}, Body {}", resolvedPath, response.getStatusCodeValue(), response.getBody());
+    // }
 
     @Given("the following merchant product is added by the merchant, referencing an existing Product:")
     public void the_following_product_is_added_by_the_merchant(DataTable dataTable) {
         List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+        // CommonStepDefinitions commonSteps = new CommonStepDefinitions(scenarioContext, restTemplate, objectMapper, customerRepository, merchantRepository, passwordEncoder); // Manually create instance or autowire if Spring managed within this class
+        // Use the injected commonSteps field instead
         for (Map<String, String> row : rows) {
             try {
                 String requestBody = objectMapper.writeValueAsString(row);
-                a_post_request_is_made_to_with_auth_merchant_body("/merchants/products", requestBody);
+                // Call the common POST step. Assumes merchant is already logged in and token is in scenarioContext.
+                this.commonSteps.a_post_request_is_made_to_with_body("/merchants/products", requestBody);
+                @SuppressWarnings("unchecked")
+                ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
                 assertThat(latestResponse.getStatusCode().is2xxSuccessful()).isTrue(); // Ensure product was added
             } catch (JsonProcessingException e) {
                 throw new RuntimeException("Failed to convert product row to JSON", e);
@@ -228,15 +267,20 @@ public class MerchantProductStepDefinitions {
     @Given("the following merchant product is added by the merchant and its merchantProductId is stored as {string}, referencing an existing Product:")
     public void the_following_product_is_added_and_id_stored(String sharedKey, DataTable dataTable) {
          List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+         // CommonStepDefinitions commonSteps = new CommonStepDefinitions(scenarioContext, restTemplate, objectMapper, customerRepository, merchantRepository, passwordEncoder); // Manually create instance
+         // Use the injected commonSteps field instead
          // Assuming one row for simplicity for this step
          Map<String, String> row = rows.get(0);
          try {
             String requestBody = objectMapper.writeValueAsString(row);
-            a_post_request_is_made_to_with_auth_merchant_body("/merchants/products", requestBody);
+            // Call the common POST step. Assumes merchant is already logged in and token is in scenarioContext.
+            this.commonSteps.a_post_request_is_made_to_with_body("/merchants/products", requestBody);
+            @SuppressWarnings("unchecked")
+            ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
             assertThat(latestResponse.getStatusCode().is2xxSuccessful()).isTrue();
             String mpId = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$.merchantProductId"), null);
             assertThat(mpId).isNotNull();
-            sharedData.put(sharedKey, mpId);
+            sharedData.put(sharedKey, mpId); // Keep using local sharedData for this specific purpose if needed, or migrate to context
             logger.info("Stored merchantProductId {} as {}", mpId, sharedKey);
          } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to convert product row to JSON for storing ID", e);
@@ -252,8 +296,9 @@ public class MerchantProductStepDefinitions {
 
         HttpHeaders headers = buildAuthenticatedHeaders(); // Uses token of currently logged-in merchant (attacker)
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
-        logger.info("Merchant {} attempting to update product at {}: Status {}, Body {}", attackerEmail, resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("Merchant {} attempting to update product at {}: Status {}, Body {}", attackerEmail, resolvedPath, response.getStatusCodeValue(), response.getBody());
     }
 
     @When("merchant {string} attempts to delete merchant product {string}")
@@ -263,8 +308,9 @@ public class MerchantProductStepDefinitions {
 
         HttpHeaders headers = buildAuthenticatedHeaders(); // Uses token of currently logged-in merchant (attacker)
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
-        logger.info("Merchant {} attempting to delete product at {}: Status {}, Body {}", attackerEmail, resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("Merchant {} attempting to delete product at {}: Status {}, Body {}", attackerEmail, resolvedPath, response.getStatusCodeValue(), response.getBody());
     }
 
     private String resolveMerchantProductPathVariables(String path) {
@@ -302,49 +348,57 @@ public class MerchantProductStepDefinitions {
     }
 
     // --- Common Then Steps (can be refactored) ---
-    @Then("the response body should contain a {string}")
-    public void the_response_body_should_contain_a(String jsonPath) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
-    }
+    // Duplicate step definition "the response body should contain a {string}" removed. Will use CommonStepDefinitions.
 
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
-        assertThat(actualValue).isEqualTo(expectedValue);
-    }
+    // @Then("the response body should contain {string} with value {string}")
+    // public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
+    //     assertThat(actualValue).isEqualTo(expectedValue);
+    // }
 
     @Then("the response body should contain {string} with value {int}")
     public void the_response_body_should_contain_with_int_value(String jsonPath, Integer expectedValue) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
         assertThat(latestResponse.getBody()).isNotNull();
         Integer actualValue = com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
         assertThat(actualValue).isEqualTo(expectedValue);
     }
 
 
-    @Then("the response body should be an empty list")
-    public void the_response_body_should_be_an_empty_list() {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().isEmpty();
-    }
+    // @Then("the response body should be an empty list")
+    // public void the_response_body_should_be_an_empty_list() {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
+    //     assertThat(list).isNotNull().isEmpty();
+    // }
 
-    @Then("the response body should be a list with {int} item(s)")
-    public void the_response_body_should_be_a_list_with_items(int count) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().hasSize(count);
-    }
+    // @Then("the response body should be a list with {int} item(s)")
+    // public void the_response_body_should_be_a_list_with_items(int count) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
+    //     assertThat(list).isNotNull().hasSize(count);
+    // }
 
-    @Then("the response body should contain an {string} field")
-    public void the_response_body_should_contain_an_error_field(String fieldName) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + fieldName);
-    }
+    // @Then("the response body should contain an {string} field")
+    // public void the_response_body_should_contain_an_error_field(String fieldName) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + fieldName);
+    // }
 
     @Then("the response body should contain {string} greater than {int}")
     public void the_response_body_should_contain_greater_than(String jsonPath, int value) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
         assertThat(latestResponse.getBody()).isNotNull();
         Integer actualValue = com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
         assertThat(actualValue).isGreaterThan(value);

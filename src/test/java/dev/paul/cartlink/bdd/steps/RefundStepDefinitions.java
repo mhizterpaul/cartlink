@@ -61,50 +61,21 @@ public class RefundStepDefinitions {
 
     @Autowired
     private ScenarioContext scenarioContext;
-
-    private ResponseEntity<String> latestResponse;
-    private Map<String, String> sharedData = new HashMap<>();
+    // private ResponseEntity<String> latestResponse; // Will be retrieved from ScenarioContext
+    // private Map<String, String> sharedData = new HashMap<>(); // Will use ScenarioContext
 
     @Before
     public void setUp() {
         refundRequestRepository.deleteAll();
-        sharedData.clear();
-        logger.info("RefundStepDefinitions: Cleared refund request repository and sharedData.");
+        // sharedData.clear(); // ScenarioContext is managed by its own lifecycle or cleared in CommonHooks
+        logger.info("RefundStepDefinitions: Cleared refund request repository.");
     }
 
     @After
     public void tearDown() {}
 
-    @Given("a customer is logged in with email {string} and password {string}")
-    public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        if (customerRepository.findByEmail(email).isEmpty()) {
-            Customer customer = new Customer();
-            customer.setEmail(email);
-            customer.setFirstName("RefundTest");
-            customer.setLastName("User");
-            customerRepository.save(customer);
-        }
-
-        Map<String, String> loginRequest = new HashMap<>();
-        loginRequest.put("email", email);
-        loginRequest.put("password", password);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-        // Assuming customer login path is /api/v1/customers/login as per CustomerController
-        // BUT RefundController is /api/customers/orders. If base URL is /api, then /customers/login
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class);
-
-        if(loginResponse.getStatusCodeValue() != 200) {
-            logger.error("Customer login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
-             assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
-        }
-        String responseBody = loginResponse.getBody();
-        String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
-        sharedData.put("customerToken", token);
-        logger.info("Customer {} logged in for refund test. Token stored.", email);
-    }
+    // Removed duplicate "a customer is logged in with email {string} and password {string}"
+    // This will be handled by CommonStepDefinitions.java
 
     @Given("an order with ID {string} exists for customer {string} and its actual ID is stored as {string}")
     public void an_order_exists_for_customer_stored_as(String symbolicOrderId, String customerEmail, String sharedKey) {
@@ -127,12 +98,9 @@ public class RefundStepDefinitions {
         }
         final Product finalProduct = tempProduct;
 
-        // final Product finalProduct = tempProduct; // Removed duplicate declaration
 
-        // Use the findByMerchantAndProduct method added to MerchantProductRepository
-
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> { // Use finalMerchant
-            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(finalMerchant); mp.setProduct(finalProduct); // use finalProduct and finalMerchant
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> {
+            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(finalMerchant); mp.setProduct(finalProduct);
 
             mp.setPrice(20.0); mp.setStock(50); mp.setDescription("Product for refund testing");
             return merchantProductRepository.save(mp);
@@ -147,8 +115,8 @@ public class RefundStepDefinitions {
         order.setOrderDate(LocalDateTime.now());
         Order savedOrder = orderRepository.save(order);
 
-        sharedData.put(sharedKey, savedOrder.getOrderId().toString());
-        logger.info("Created order with actual ID {} for customer {}, stored as {}. Symbolic test ID was {}",
+        scenarioContext.set(sharedKey, savedOrder.getOrderId().toString()); // Use ScenarioContext
+        logger.info("Created order with actual ID {} for customer {}, stored as {} in ScenarioContext. Symbolic test ID was {}",
                     savedOrder.getOrderId(), customerEmail, sharedKey, symbolicOrderId);
     }
 
@@ -156,8 +124,8 @@ public class RefundStepDefinitions {
     public void customer_submitted_refund_request_for_order(String customerEmail, String orderSharedKey, String reason) {
         Customer customer = customerRepository.findByEmail(customerEmail)
             .orElseThrow(() -> new AssertionError("Customer " + customerEmail + " not found for refund setup."));
-        String orderIdStr = sharedData.get(orderSharedKey);
-        assertThat(orderIdStr).isNotNull().withFailMessage("Order ID for key " + orderSharedKey + " not found in sharedData.");
+        String orderIdStr = scenarioContext.getString(orderSharedKey); // Use ScenarioContext
+        assertThat(orderIdStr).isNotNull().withFailMessage("Order ID for key " + orderSharedKey + " not found in ScenarioContext.");
         Order order = orderRepository.findById(Long.parseLong(orderIdStr))
             .orElseThrow(() -> new AssertionError("Order with ID " + orderIdStr + " not found for refund setup."));
 
@@ -168,7 +136,7 @@ public class RefundStepDefinitions {
         refundRequest.setAccountNumber("PRESET_ACC_NUM");
         refundRequest.setBankName("PRESET_BANK");
         refundRequest.setAccountName(customer.getFirstName() + " " + customer.getLastName());
-        refundRequest.setStatus(RefundStatus.PENDING); // Use Enum
+        refundRequest.setStatus(RefundStatus.PENDING);
         refundRequest.setRequestedAt(LocalDateTime.now());
         refundRequestRepository.save(refundRequest);
         logger.info("Created pre-existing refund request for order ID {} with reason '{}'", orderIdStr, reason);
@@ -176,8 +144,8 @@ public class RefundStepDefinitions {
 
     @Given("an order with ID {string} exists for customer {string} and has no refund requests, and its actual ID is stored as {string}")
     public void an_order_exists_for_customer_with_no_refund_requests_stored_as(String symbolicOrderId, String customerEmail, String sharedKey) {
-        an_order_exists_for_customer_stored_as(symbolicOrderId, customerEmail, sharedKey);
-        String actualOrderIdStr = sharedData.get(sharedKey);
+        an_order_exists_for_customer_stored_as(symbolicOrderId, customerEmail, sharedKey); // This now uses ScenarioContext
+        String actualOrderIdStr = scenarioContext.getString(sharedKey); // Use ScenarioContext
         Order order = orderRepository.findById(Long.parseLong(actualOrderIdStr))
             .orElseThrow(() -> new AssertionError("Order not found for refund verification: " + actualOrderIdStr));
         List<RefundRequest> refunds = refundRequestRepository.findByOrder(order);
@@ -188,92 +156,70 @@ public class RefundStepDefinitions {
     private HttpHeaders buildAuthenticatedCustomerHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        if (sharedData.containsKey("customerToken")) {
-            headers.setBearerAuth(sharedData.get("customerToken"));
+        if (scenarioContext.containsKey("customerToken")) { // Use ScenarioContext
+            headers.setBearerAuth(scenarioContext.getString("customerToken"));
         } else {
-             logger.warn("No customerToken found in sharedData for authenticated request!");
+             logger.warn("No customerToken found in ScenarioContext for authenticated request!");
         }
         return headers;
     }
 
-    private String resolvePathPlaceholders(String path) {
-        String resolvedPath = path;
-        for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (resolvedPath.contains("{" + entry.getKey() + "}")) {
-                resolvedPath = resolvedPath.replace("{" + entry.getKey() + "}", entry.getValue());
+    // Removed resolvePathPlaceholders and resolveBodyPlaceholders, will rely on CommonStepDefinitions or direct ScenarioContext usage
+
+    // This step definition is now in CommonStepDefinitions.java
+    // @When("a POST request is made to {string} with an authenticated customer and the following body:")
+    // public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
+    //     ...
+    // }
+
+    // Removed duplicate "a POST request is made to {string} with the following body:" as it will be handled by CommonStepDefinitions
+
+    // This step is now in CommonStepDefinitions.java
+    // @When("a GET request is made to {string} with an authenticated customer")
+    // public void a_get_request_is_made_to_with_auth_customer(String path) {
+    //     ...
+    // }
+
+    private String resolvePlaceholdersFromScenarioContext(String valueWithPlaceholders) {
+        String resolvedValue = valueWithPlaceholders;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        java.util.regex.Matcher matcher = pattern.matcher(resolvedValue);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            if (scenarioContext.containsKey(key)) {
+                matcher.appendReplacement(sb, scenarioContext.getString(key));
+            } else {
+                logger.warn("Placeholder {{{}}} found in value but key not in ScenarioContext.", key);
+                matcher.appendReplacement(sb, matcher.group(0)); // Keep original placeholder
             }
         }
-        if (resolvedPath.contains("{") && resolvedPath.contains("}")) {
-             logger.warn("Path {} still contains unresolved placeholders: {}", path, resolvedPath);
+        matcher.appendTail(sb);
+        resolvedValue = sb.toString();
+
+        if (resolvedValue.contains("{") && resolvedValue.contains("}")) {
+             logger.warn("Value {} still contains unresolved placeholders: {}", valueWithPlaceholders, resolvedValue);
         }
-        return resolvedPath;
+        return resolvedValue;
     }
 
-    private String resolveBodyPlaceholders(String body) {
-        String resolvedBody = body;
-         for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (resolvedBody.contains("{" + entry.getKey() + "}")) {
-                resolvedBody = resolvedBody.replace("{" + entry.getKey() + "}", entry.getValue());
-            }
-        }
-        return resolvedBody;
-    }
+    // Removed duplicate method "the_response_body_should_contain_with_value"
+    // as it's covered by CommonStepDefinitions.the_response_body_should_contain_with_value
 
-    @When("a POST request is made to {string} with an authenticated customer and the following body:")
-    public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedCustomerHeaders();
-        HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
-    }
+    // Removed duplicate method "the_response_body_should_contain_an_error_field"
+    // as it is defined in CommonStepDefinitions.java
 
-    @When("a POST request is made to {string} with the following body:")
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
-    }
+    // Removed duplicate method "the_response_body_should_be_a_list_with_at_least_items"
+    // as it's covered by CommonStepDefinitions
 
-    @When("a GET request is made to {string} with an authenticated customer")
-    public void a_get_request_is_made_to_with_auth_customer(String path) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = buildAuthenticatedCustomerHeaders();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-    }
-
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        String resolvedExpectedValue = resolveBodyPlaceholders(expectedValue);
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
-        assertThat(actualValue).isEqualTo(resolvedExpectedValue);
-    }
-
-    @Then("the response body should contain an {string} field")
-    public void the_response_body_should_contain_an_error_field(String fieldName) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + fieldName);
-    }
-
-    @Then("the response body should be a list with at least {int} item(s)")
-    public void the_response_body_should_be_a_list_with_at_least_items(int minCount) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().hasSizeGreaterThanOrEqualTo(minCount);
-    }
-
-    @Then("the response body should be an empty list")
-    public void the_response_body_should_be_an_empty_list() {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().isEmpty();
-    }
+    // Removed duplicate method "the_response_body_should_be_an_empty_list"
+    // as it's covered by CommonStepDefinitions.the_response_body_should_be_an_empty_list
 
     @Then("the response body should contain {string}") // General check for a key
     public void the_response_body_should_contain_key(String jsonPath) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+        assertThat(latestResponse).isNotNull();
         assertThat(latestResponse.getBody()).isNotNull();
         com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
     }

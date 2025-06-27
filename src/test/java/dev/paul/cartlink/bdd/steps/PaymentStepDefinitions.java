@@ -60,14 +60,15 @@ public class PaymentStepDefinitions {
     @Autowired
     private ScenarioContext scenarioContext;
     // private String apiBaseUrl; // Removed
-    private ResponseEntity<String> latestResponse;
+    // private ResponseEntity<String> latestResponse; // Will use ScenarioContext
     private Map<String, String> sharedData = new HashMap<>();
 
     @Before
     public void setUp() {
         // orderRepository.deleteAll(); // Orders are preconditions, specific cleanup if needed by scenario.
         sharedData.clear();
-        logger.info("PaymentStepDefinitions: Cleared sharedData.");
+        scenarioContext.clear(); // Clear scenario context as well
+        logger.info("PaymentStepDefinitions: Cleared sharedData and ScenarioContext.");
     }
 
     @After
@@ -169,8 +170,9 @@ public class PaymentStepDefinitions {
         }
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
-        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePlaceholders(path), entity, String.class);
-        logger.info("POST Form to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePlaceholders(path), entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("POST Form to {}: Status {}, Body {}", resolvePlaceholders(path), response.getStatusCodeValue(), response.getBody());
     }
 
     @When("a POST request is made to {string} with no body")
@@ -178,37 +180,40 @@ public class PaymentStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders(); // No specific Content-Type needed for no-body POST
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePlaceholders(path), entity, String.class);
-        logger.info("POST (no body) to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePlaceholders(path), entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("POST (no body) to {}: Status {}, Body {}", resolvePlaceholders(path), response.getStatusCodeValue(), response.getBody());
     }
 
 
     // --- Then Steps ---
-    @Then("the response body should contain a {string}")
-    public void the_response_body_should_contain_a_key(String jsonPath) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
-    }
+    // Duplicate step definition removed, will use the one in CommonStepDefinitions.java
 
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        String resolvedExpectedValue = resolvePlaceholders(expectedValue);
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
-        assertThat(actualValue).isEqualTo(resolvedExpectedValue);
-    }
+    // @Then("the response body should contain {string} with value {string}")
+    // public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     String resolvedExpectedValue = resolvePlaceholders(expectedValue);
+    //     String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
+    //     assertThat(actualValue).isEqualTo(resolvedExpectedValue);
+    // }
 
-    @Then("the response body should contain {string} with number value {string}")
-    public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        Object actualObject = com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
-        BigDecimal actualValue = new BigDecimal(actualObject.toString());
-        BigDecimal expectedDecimalValue = new BigDecimal(expectedValue);
-        assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
-    }
+    // @Then("the response body should contain {string} with number value {string}")
+    // public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValue) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     Object actualObject = com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
+    //     BigDecimal actualValue = new BigDecimal(actualObject.toString());
+    //     BigDecimal expectedDecimalValue = new BigDecimal(expectedValue);
+    //     assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
+    // }
 
     @Then("the response body should be the string {string}")
     public void the_response_body_should_be_the_string(String expectedBody) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
         assertThat(latestResponse.getBody()).isEqualTo(expectedBody);
     }
 }

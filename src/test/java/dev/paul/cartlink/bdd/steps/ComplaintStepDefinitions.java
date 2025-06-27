@@ -62,16 +62,15 @@ public class ComplaintStepDefinitions {
     @Autowired
     private ScenarioContext scenarioContext;
 
-    private ResponseEntity<String> latestResponse;
-    private Map<String, String> sharedData = new HashMap<>();
+    // private ResponseEntity<String> latestResponse; // Removed: Now using ScenarioContext
+    // private Map<String, String> sharedData = new HashMap<>(); // Removed: Now using ScenarioContext
 
     @Before
     public void setUp() {
         complaintRepository.deleteAll();
-        // orderRepository.deleteAll(); // Avoid deleting orders if other features depend on them or set them up.
-                                     // Complaint tests should ideally create their own specific orders.
-        sharedData.clear();
-        logger.info("ComplaintStepDefinitions: Cleared complaint repository and sharedData.");
+        // orderRepository.deleteAll();
+        // sharedData.clear(); // Removed
+        logger.info("ComplaintStepDefinitions: Cleared complaint repository.");
     }
 
     @After
@@ -79,94 +78,17 @@ public class ComplaintStepDefinitions {
 
     // This step is now in CommonStepDefinitions.java
     // @Given("a customer is logged in with email {string} and password {string}")
-    // public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
-    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-    //     if (customerRepository.findByEmail(email).isEmpty()) {
-    //         Customer customer = new Customer();
-    //         customer.setEmail(email);
-    //         customer.setFirstName("ComplaintTest");
-    //         customer.setLastName("User");
-    //         customerRepository.save(customer);
-    //     }
-    //
-    //     Map<String, String> loginRequest = new HashMap<>();
-    //     loginRequest.put("email", email);
-    //     loginRequest.put("password", password); // CustomerService handles actual auth
-    //     HttpHeaders headers = new HttpHeaders();
-    //     headers.setContentType(MediaType.APPLICATION_JSON);
-    //     HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-    //     ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class);
-    //
-    //     if(loginResponse.getStatusCodeValue() != 200) {
-    //         logger.error("Customer login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
-    //          assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
-    //     }
-    //     String responseBody = loginResponse.getBody();
-    //     String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
-    //     sharedData.put("customerToken", token); // This will need to use ScenarioContext if other steps here need the token
-    //     logger.info("Customer {} logged in for complaint test. Token stored.", email);
-    // }
+    // ... (rest of commented out method)
 
-    @Given("an order with ID {string} exists for customer {string} and its actual ID is stored as {string}")
-    public void an_order_exists_for_customer_stored_as(String symbolicOrderId, String customerEmail, String sharedKey) {
-        Customer customer = customerRepository.findByEmail(customerEmail)
-            .orElseThrow(() -> new AssertionError("Customer " + customerEmail + " not found for order setup."));
-
-        // Create a dummy merchant and product for the order if they don't exist
-        Merchant tempMerchant = merchantRepository.findByEmail("complaint.merchant@example.com").orElseGet(() -> {
-            Merchant m = new Merchant();
-            m.setEmail("complaint.merchant@example.com");
-            m.setFirstName("Complaint");
-            m.setLastName("Merchant");
-            m.setPassword(passwordEncoder.encode("password"));
-            return merchantRepository.save(m);
-        });
-        final Merchant finalMerchant = tempMerchant;
-
-        List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase("ComplaintProduct");
-        Product tempProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
-        if (tempProduct == null) {
-            Product p = new Product();
-            p.setName("ComplaintProduct");
-            p.setBrand("Brand");
-            p.setCategory("Category");
-            tempProduct = productRepository.save(p);
-        }
-        // final Product finalProduct = tempProduct; // Removed first duplicate declaration
-        final Product productForMerchantProduct = tempProduct; // Renamed for clarity in this scope
-
-        // Use the findByMerchantAndProduct method added to MerchantProductRepository
-
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, productForMerchantProduct).orElseGet(()-> { // Used finalMerchant and renamed productForMerchantProduct
-            MerchantProduct mp = new MerchantProduct();
-            mp.setMerchant(finalMerchant); // Used finalMerchant
-            mp.setProduct(productForMerchantProduct); // Used renamed productForMerchantProduct
-            mp.setPrice(10.0);
-            mp.setStock(100);
-            mp.setDescription("Product for complaint testing");
-            return merchantProductRepository.save(mp);
-        });
-
-        Order order = new Order();
-        order.setCustomer(customer);
-        order.setMerchantProduct(merchantProduct);
-        order.setQuantity(1);
-        order.setTotalPrice(merchantProduct.getPrice());
-        order.setStatus(OrderStatus.DELIVERED); // Assume delivered to complain
-        order.setOrderDate(LocalDateTime.now());
-        Order savedOrder = orderRepository.save(order);
-
-        sharedData.put(sharedKey, savedOrder.getOrderId().toString());
-        logger.info("Created order with actual ID {} for customer {}, stored as {}. Symbolic test ID was {}",
-                    savedOrder.getOrderId(), customerEmail, sharedKey, symbolicOrderId);
-    }
+    // Removed duplicate step: @Given("an order with ID {string} exists for customer {string} and its actual ID is stored as {string}")
+    // ... (rest of comment)
 
     @Given("the customer {string} submitted a complaint for order {string} with title {string}")
     public void customer_submitted_complaint_for_order_with_title(String customerEmail, String orderSharedKey, String complaintTitle) {
         Customer customer = customerRepository.findByEmail(customerEmail)
             .orElseThrow(() -> new AssertionError("Customer " + customerEmail + " not found for complaint setup."));
-        String orderIdStr = sharedData.get(orderSharedKey);
-        assertThat(orderIdStr).isNotNull().withFailMessage("Order ID for key " + orderSharedKey + " not found in sharedData.");
+        String orderIdStr = scenarioContext.getString(orderSharedKey); // Corrected: Use ScenarioContext
+        assertThat(orderIdStr).isNotNull().withFailMessage("Order ID for key " + orderSharedKey + " not found in ScenarioContext.");
         Order order = orderRepository.findById(Long.parseLong(orderIdStr))
             .orElseThrow(() -> new AssertionError("Order with ID " + orderIdStr + " not found for complaint setup."));
 
@@ -184,23 +106,66 @@ public class ComplaintStepDefinitions {
 
     @Given("an order with ID {string} exists for customer {string} and has no complaints, and its actual ID is stored as {string}")
     public void an_order_exists_for_customer_with_no_complaints_stored_as(String symbolicOrderId, String customerEmail, String sharedKey) {
-        // This step is essentially the same as creating an order, just ensuring no complaints are linked.
-        // The setup for `an_order_exists_for_customer_stored_as` already ensures it's a new order without complaints.
-        an_order_exists_for_customer_stored_as(symbolicOrderId, customerEmail, sharedKey);
-        // Verify no complaints exist for this order (optional, as new orders shouldn't have them)
-        String actualOrderIdStr = sharedData.get(sharedKey);
-        Order order = orderRepository.findById(Long.parseLong(actualOrderIdStr))
-            .orElseThrow(() -> new AssertionError("Order not found for complaint verification: " + actualOrderIdStr));
-        List<Complaint> complaints = complaintRepository.findByOrder(order);
+        // Create the order directly here, similar to how it was done before or how RefundStepDefinitions does it.
+        // Ensure it uses complaint-specific details if necessary and stores ID in ScenarioContext.
+        Customer customer = customerRepository.findByEmail(customerEmail)
+            .orElseThrow(() -> new AssertionError("Customer " + customerEmail + " not found for order setup."));
+
+        Merchant tempMerchant = merchantRepository.findByEmail("complaint.specific.merchant@example.com").orElseGet(() -> {
+            Merchant m = new Merchant();
+            m.setEmail("complaint.specific.merchant@example.com");
+            m.setFirstName("ComplaintSetup");
+            m.setLastName("Merchant");
+            m.setPassword(passwordEncoder.encode("password"));
+            return merchantRepository.save(m);
+        });
+        final Merchant finalMerchant = tempMerchant;
+
+        List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase("ComplaintSetupProduct");
+        Product tempProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
+        if (tempProduct == null) {
+            Product p = new Product();
+            p.setName("ComplaintSetupProduct");
+            p.setBrand("BrandCS");
+            p.setCategory("CategoryCS");
+            tempProduct = productRepository.save(p);
+        }
+        final Product productForMerchantProduct = tempProduct;
+
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, productForMerchantProduct).orElseGet(()-> {
+            MerchantProduct mp = new MerchantProduct();
+            mp.setMerchant(finalMerchant);
+            mp.setProduct(productForMerchantProduct);
+            mp.setPrice(15.0); // Different price for clarity if needed
+            mp.setStock(150);  // Different stock
+            mp.setDescription("Product for complaint setup and verification");
+            return merchantProductRepository.save(mp);
+        });
+
+        Order order = new Order();
+        order.setCustomer(customer);
+        order.setMerchantProduct(merchantProduct);
+        order.setQuantity(1);
+        order.setTotalPrice(merchantProduct.getPrice());
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setOrderDate(LocalDateTime.now());
+        Order savedOrder = orderRepository.save(order);
+
+        scenarioContext.set(sharedKey, savedOrder.getOrderId().toString()); // Use ScenarioContext
+        logger.info("ComplaintStepDefinitions: Created order with actual ID {} for customer {}, stored as {} in ScenarioContext. Symbolic test ID was {}",
+                    savedOrder.getOrderId(), customerEmail, sharedKey, symbolicOrderId);
+
+        // Verify no complaints exist for this newly created order
+        List<Complaint> complaints = complaintRepository.findByOrder(savedOrder);
         assertThat(complaints).isEmpty();
-        logger.info("Ensured order ID {} (stored as {}) has no complaints.", actualOrderIdStr, sharedKey);
+        logger.info("ComplaintStepDefinitions: Ensured order ID {} (stored as {}) has no complaints.", savedOrder.getOrderId(), sharedKey);
     }
 
 
     private HttpHeaders buildAuthenticatedCustomerHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String customerToken = scenarioContext.getString("customerToken");
+        String customerToken = scenarioContext.getString("customerToken"); // Retrieve from ScenarioContext
         if (customerToken != null) {
             headers.setBearerAuth(customerToken);
         } else {
@@ -209,35 +174,40 @@ public class ComplaintStepDefinitions {
         return headers;
     }
 
-    private String resolvePathPlaceholders(String path) {
-        String resolvedPath = path;
-        for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (resolvedPath.contains("{" + entry.getKey() + "}")) {
-                resolvedPath = resolvedPath.replace("{" + entry.getKey() + "}", entry.getValue());
+    // Using ScenarioContext based placeholder resolution
+    private String resolvePlaceholders(String valueWithPlaceholders) {
+        String resolvedValue = valueWithPlaceholders;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        java.util.regex.Matcher matcher = pattern.matcher(resolvedValue);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            if (scenarioContext.containsKey(key)) {
+                matcher.appendReplacement(sb, scenarioContext.getString(key));
+            } else {
+                logger.warn("Placeholder {{{}}} found in value but key not in ScenarioContext.", key);
+                matcher.appendReplacement(sb, matcher.group(0)); // Keep original placeholder
             }
         }
-        if (resolvedPath.contains("{") && resolvedPath.contains("}")) {
-             logger.warn("Path {} still contains unresolved placeholders: {}", path, resolvedPath);
+        matcher.appendTail(sb);
+        resolvedValue = sb.toString();
+
+        if (resolvedValue.contains("{") && resolvedValue.contains("}")) {
+             logger.warn("Value {} still contains unresolved placeholders: {}", valueWithPlaceholders, resolvedValue);
         }
-        return resolvedPath;
+        return resolvedValue;
     }
 
-    private String resolveBodyPlaceholders(String body) {
-        String resolvedBody = body;
-         for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (resolvedBody.contains("{" + entry.getKey() + "}")) {
-                resolvedBody = resolvedBody.replace("{" + entry.getKey() + "}", entry.getValue());
-            }
-        }
-        return resolvedBody;
-    }
 
     @When("for a complaint, a POST request is made to {string} with an authenticated customer and the following body:")
     public void for_a_complaint_a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
-        HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), entity, String.class);
-        logger.info("Authenticated Customer POST to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        String resolvedBody = resolvePlaceholders(requestBody); // Use new resolvePlaceholders
+        String resolvedPath = resolvePlaceholders(path);       // Use new resolvePlaceholders
+        HttpEntity<String> entity = new HttpEntity<>(resolvedBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvedPath, entity, String.class);
+        scenarioContext.set("latestResponse", response); // Store in ScenarioContext
+        logger.info("Authenticated Customer POST to {}: Status {}, Body {}", resolvedPath, response.getStatusCodeValue(), response.getBody());
     }
 
     // This step is now in CommonStepDefinitions.java
@@ -255,8 +225,10 @@ public class ComplaintStepDefinitions {
     public void for_a_complaint_a_get_request_is_made_to_with_auth_customer(String path) {
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-        logger.info("Authenticated Customer GET to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+        String resolvedPath = resolvePlaceholders(path); // Corrected: Use resolvePlaceholders
+        ResponseEntity<String> response = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvedPath, HttpMethod.GET, entity, String.class);
+        scenarioContext.set("latestResponse", response); // Corrected: Store in ScenarioContext
+        logger.info("Authenticated Customer GET to {}: Status {}, Body {}", resolvedPath, response.getStatusCodeValue(), response.getBody());
     }
 
     // --- Then Steps (Common) ---
