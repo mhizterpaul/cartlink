@@ -28,14 +28,21 @@ import java.util.Base64;
 // @ConfigurationProperties(prefix = "rsa") // No longer needed as we use @Value
 public class RsaKeyProperties {
 
+    @Value("${rsa.private-key.location}")
     private String privateKeyLocation;
+
+    @Value("${rsa.public-key.location}")
     private String publicKeyLocation;
+
     private final ResourceLoader resourceLoader;
 
     public RsaKeyProperties(ResourceLoader resourceLoader) {
         this.resourceLoader = resourceLoader;
     }
 
+    // Setters might not be strictly necessary if @Value is used on fields,
+    // but keeping them doesn't hurt and can be useful if properties are optional/have defaults.
+    // For this use case, locations are mandatory.
     public void setPrivateKey(String privateKeyLocation) {
         this.privateKeyLocation = privateKeyLocation;
     }
@@ -45,6 +52,9 @@ public class RsaKeyProperties {
     }
 
     private String readKeyFromResource(String location) throws IOException {
+        if (location == null) {
+            throw new IllegalArgumentException("Location must not be null");
+        }
         Resource resource = resourceLoader.getResource(location);
 
         try (Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {

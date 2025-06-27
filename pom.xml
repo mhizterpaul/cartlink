@@ -22,12 +22,19 @@
         <java.version>17</java.version>
         <spring-boot.version>3.2.5</spring-boot.version>
         <cucumber.version>7.15.0</cucumber.version>
+        <skipTests>false</skipTests>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-spring</artifactId>
+            <version>${cucumber.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-java</artifactId>
             <version>${cucumber.version}</version>
             <scope>test</scope>
         </dependency>
@@ -204,6 +211,23 @@
                     <source>17</source>
                     <target>17</target>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <!-- Version is managed by Spring Boot parent -->
+                <configuration>
+                    <includes>
+                        <include>**/CucumberTestRunner.java</include>
+                    </includes>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter-engine</artifactId>
+                        <version>${junit-jupiter.version}</version> <!-- Managed by Spring Boot parent -->
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
         <testSourceDirectory>src/test/java</testSourceDirectory>

@@ -13,12 +13,12 @@ import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
-import dev.paul.cartlink.bdd.context.ScenarioContext;
+import dev.paul.cartlink.bdd.context.ScenarioContext; // Keep this one
 
-import dev.paul.cartlink.bdd.ScenarioContext;
+// import dev.paul.cartlink.bdd.ScenarioContext; // Remove this duplicate
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.en.Given; // Added back
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 

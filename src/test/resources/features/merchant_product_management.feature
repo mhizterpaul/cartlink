@@ -130,3 +130,24 @@ Feature: Merchant Product Management
   # is not covered here due to its external Python dependency and potential overload with Add Product.
   # Testing it would require mocking the llm_form_generator.py script or ensuring it's available and configured.
   # This should be documented as a limitation if it cannot be tested.
+
+  Scenario: Merchant A attempts to update Merchant B's product
+    Given a merchant "merchantA@example.com" is logged in with password "PassA123!"
+    And a merchant "merchantB@example.com" exists with password "PassB456!"
+    And merchant "merchantB@example.com" has a product "Product B" with price 10.00 and stock 5, whose merchantProductId is stored as "product_of_merchant_b"
+    When merchant "merchantA@example.com" attempts to update merchant product "{product_of_merchant_b}" with the following body:
+      """
+      {
+        "description": "Attempted update by Merchant A",
+        "stock": 1,
+        "price": 1.00
+      }
+      """
+    Then the response status code should be 403 # Or 404 if hidden
+
+  Scenario: Merchant A attempts to delete Merchant B's product
+    Given a merchant "merchantA@example.com" is logged in with password "PassA123!"
+    And a merchant "merchantB@example.com" exists with password "PassB456!"
+    And merchant "merchantB@example.com" has a product "Product B To Delete" with price 10.00 and stock 5, whose merchantProductId is stored as "product_to_delete_by_a"
+    When merchant "merchantA@example.com" attempts to delete merchant product "{product_to_delete_by_a}"
+    Then the response status code should be 403 # Or 404 if hidden

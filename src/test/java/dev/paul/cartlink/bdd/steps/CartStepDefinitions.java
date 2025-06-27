@@ -13,11 +13,11 @@ import org.springframework.security.crypto.password.PasswordEncoder; // Added
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.When;
-import io.cucumber.java.en.Then;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,7 +67,7 @@ public class CartStepDefinitions {
     // Shared state
     @Autowired
     private ScenarioContext scenarioContext;
-    private ResponseEntity<String> latestResponse;
+    // private ResponseEntity<String> latestResponse; // Will be stored in ScenarioContext
     private String cartCookieId; // To store and reuse the cart_cookie_id
     private Map<String, String> sharedData = new HashMap<>(); // For tokens, customer IDs, item IDs from responses
 
@@ -216,9 +216,10 @@ public class CartStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildHeadersWithCartCookie();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolveCartPathVariables(path), HttpMethod.valueOf(method.toUpperCase()), entity, String.class);
-        extractCartCookie(latestResponse);
-        logger.info("{} request to {} (cart session). Status: {}, Body: {}", method, path, latestResponse.getStatusCode(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolveCartPathVariables(path), HttpMethod.valueOf(method.toUpperCase()), entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        extractCartCookie(response);
+        logger.info("{} request to {} (cart session). Status: {}, Body: {}", method, path, response.getStatusCode(), response.getBody());
     }
 
     @When("a {word} request is made to {string} using the cart session with the following body:")
@@ -226,9 +227,10 @@ public class CartStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildHeadersWithCartCookie();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolveCartPathVariables(path), HttpMethod.valueOf(method.toUpperCase()), entity, String.class);
-        extractCartCookie(latestResponse);
-        logger.info("{} request to {} (cart session) with body. Status: {}, Body: {}", method, path, latestResponse.getStatusCode(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolveCartPathVariables(path), HttpMethod.valueOf(method.toUpperCase()), entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        extractCartCookie(response);
+        logger.info("{} request to {} (cart session) with body. Status: {}, Body: {}", method, path, response.getStatusCode(), response.getBody());
     }
 
     @When("a POST request is made to {string} using the cart session and authenticated customer with the following body:")
@@ -237,40 +239,52 @@ public class CartStepDefinitions {
         // This step assumes customerToken is already in sharedData via a "customer is logged in" step
         HttpHeaders headers = buildHeadersWithCartCookie(); // Will include Bearer token if present
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolveCartPathVariables(path), entity, String.class);
-        extractCartCookie(latestResponse);
-        logger.info("POST request to {} (cart session, auth customer) with body. Status: {}, Body: {}", path, latestResponse.getStatusCode(), latestResponse.getBody());
+        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolveCartPathVariables(path), entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        extractCartCookie(response);
+        logger.info("POST request to {} (cart session, auth customer) with body. Status: {}, Body: {}", path, response.getStatusCode(), response.getBody());
     }
 
 
     // Then steps (can be common)
-    @Then("the response body should contain {string}")
-    public void the_response_body_should_contain_a(String jsonPath) {
-        String responseBody = latestResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
-    }
+    // This step is now in CommonStepDefinitions.java as:
+    // @Then("the response body should contain a {string}") for JSONPath checks
+    // or @Then("the response body should include the text {string}") for substring checks
+    // @Then("the response body should contain {string}")
+    // public void the_response_body_should_contain_a(String jsonPath) {
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     String responseBody = latestResponse.getBody();
+    //     assertThat(responseBody).isNotNull();
+    //     com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
+    // }
 
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        String responseBody = latestResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath), "");
-        assertThat(actualValue).isEqualTo(expectedValue);
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should contain {string} with value {string}")
+    // public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     String responseBody = latestResponse.getBody();
+    //     assertThat(responseBody).isNotNull();
+    //     String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath), "");
+    //     assertThat(actualValue).isEqualTo(expectedValue);
+    // }
 
-    @Then("the response body should contain {string} with number value {string}")
-    public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValue) {
-        String responseBody = latestResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        Object actualObject = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
-        BigDecimal actualValue = new BigDecimal(actualObject.toString());
-        BigDecimal expectedDecimalValue = new BigDecimal(expectedValue);
-        assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should contain {string} with number value {string}")
+    // public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValue) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     String responseBody = latestResponse.getBody();
+    //     assertThat(responseBody).isNotNull();
+    //     Object actualObject = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
+    //     BigDecimal actualValue = new BigDecimal(actualObject.toString());
+    //     BigDecimal expectedDecimalValue = new BigDecimal(expectedValue);
+    //     assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
+    // }
 
     @Then("the response body should contain {string} as an empty list")
     public void the_response_body_should_contain_as_an_empty_list(String jsonPath) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
         String responseBody = latestResponse.getBody();
         assertThat(responseBody).isNotNull();
         List<?> list = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
@@ -279,20 +293,23 @@ public class CartStepDefinitions {
 
     @Then("the response body should contain {string} as a list with {int} item(s)")
     public void the_response_body_should_contain_as_a_list_with_items(String jsonPath, int count) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
         String responseBody = latestResponse.getBody();
         assertThat(responseBody).isNotNull();
         List<?> list = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
         assertThat(list).isNotNull().hasSize(count);
     }
 
-    @Then("the response body should contain a message like {string}")
-    public void the_response_body_should_contain_a_message_like(String messageSubstring) {
-        String responseBody = latestResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        // This is a simplified check. A more robust check might parse the JSON
-        // and look for a specific "message" or "error" field.
-        assertThat(responseBody).containsIgnoringCase(messageSubstring);
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should contain a message like {string}")
+    // public void the_response_body_should_contain_a_message_like(String messageSubstring) {
+    //     String responseBody = latestResponse.getBody();
+    //     assertThat(responseBody).isNotNull();
+    //     // This is a simplified check. A more robust check might parse the JSON
+    //     // and look for a specific "message" or "error" field.
+    //     assertThat(responseBody).containsIgnoringCase(messageSubstring);
+    // }
 
     private String resolveCartPathVariables(String path) {
         String resolvedPath = path;

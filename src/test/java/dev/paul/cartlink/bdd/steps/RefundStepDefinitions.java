@@ -18,11 +18,11 @@ import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -127,12 +127,12 @@ public class RefundStepDefinitions {
         }
         final Product finalProduct = tempProduct;
 
-        final Product finalProduct = tempProduct; // final or effectively final
+        // final Product finalProduct = tempProduct; // Removed duplicate declaration
 
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
 
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, finalProduct).orElseGet(()-> {
-            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(merchant); mp.setProduct(finalProduct); // use finalProduct
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> { // Use finalMerchant
+            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(finalMerchant); mp.setProduct(finalProduct); // use finalProduct and finalMerchant
 
             mp.setPrice(20.0); mp.setStock(50); mp.setDescription("Product for refund testing");
             return merchantProductRepository.save(mp);

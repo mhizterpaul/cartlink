@@ -13,11 +13,11 @@ import dev.paul.cartlink.product.repository.ProductRepository;
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +55,8 @@ public class CouponStepDefinitions {
     private ScenarioContext scenarioContext;
 
     // private String apiBaseUrl; // Removed, using ScenarioContext
-    private ResponseEntity<String> latestResponse;
-    private Map<String, String> sharedData = new HashMap<>();
+    // private ResponseEntity<String> latestResponse; // Will be set in scenarioContext by request steps
+    // private Map<String, String> sharedData = new HashMap<>(); // Will use ScenarioContext
 
     @Before
     public void setUp() {
@@ -64,45 +64,46 @@ public class CouponStepDefinitions {
         // merchantProductRepository.deleteAll(); // If needed and not handled by other steps
         // productRepository.deleteAll();
         // merchantRepository.deleteAll();
-        sharedData.clear();
-        logger.info("CouponStepDefinitions: Cleared coupon repository and sharedData.");
+        // sharedData.clear(); // Not using local sharedData anymore
+        logger.info("CouponStepDefinitions: Cleared coupon repository.");
     }
 
     @After
     public void tearDown() {}
 
-    @Given("a merchant is logged in with email {string} and password {string}")
-    public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        Merchant merchant = merchantRepository.findByEmail(email).orElseGet(() -> {
-            Merchant m = new Merchant();
-            m.setEmail(email);
-            m.setPassword(passwordEncoder.encode(password));
-            m.setFirstName("CouponTest");
-            m.setLastName("Merchant");
-            return merchantRepository.save(m);
-        });
-        sharedData.put("merchantId", merchant.getMerchantId().toString()); // Store actual merchant ID
-
-        Map<String, String> loginRequest = new HashMap<>();
-        loginRequest.put("email", email);
-        loginRequest.put("password", password);
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl.replace("/v1","") + "/merchant/login", entity, String.class); // Corrected login path
-
-        if(loginResponse.getStatusCodeValue() != 200) {
-            logger.error("Merchant login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
-             assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
-        }
-        String responseBody = loginResponse.getBody();
-        String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
-        // String loggedInMerchantId = Objects.toString(com.jayway.jsonpath.JsonPath.read(responseBody, "$.merchant.merchantId"));
-        // sharedData.put("merchantId", loggedInMerchantId); // Already got from merchant object
-        sharedData.put("merchantToken", token);
-        logger.info("Merchant {} logged in. Token and merchantId {} stored.", email, sharedData.get("merchantId"));
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Given("a merchant is logged in with email {string} and password {string}")
+    // public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     Merchant merchant = merchantRepository.findByEmail(email).orElseGet(() -> {
+    //         Merchant m = new Merchant();
+    //         m.setEmail(email);
+    //         m.setPassword(passwordEncoder.encode(password));
+    //         m.setFirstName("CouponTest");
+    //         m.setLastName("Merchant");
+    //         return merchantRepository.save(m);
+    //     });
+    //     scenarioContext.set("merchantId", merchant.getMerchantId().toString()); // Store actual merchant ID in ScenarioContext
+    //
+    //     Map<String, String> loginRequest = new HashMap<>();
+    //     loginRequest.put("email", email);
+    //     loginRequest.put("password", password);
+    //     HttpHeaders headers = new HttpHeaders();
+    //     headers.setContentType(MediaType.APPLICATION_JSON);
+    //     HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
+    //     // Note: CommonStepDefinitions uses /merchants/login. This one used /merchant/login.
+    //     // Sticking to the one in CommonStepDefinitions for consistency.
+    //     ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/merchants/login", entity, String.class);
+    //
+    //     if(loginResponse.getStatusCodeValue() != 200) {
+    //         logger.error("Merchant login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
+    //          assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
+    //     }
+    //     String responseBody = loginResponse.getBody();
+    //     String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
+    //     scenarioContext.set("merchantToken", token); // Store in ScenarioContext
+    //     logger.info("Merchant {} logged in. Token and merchantId {} stored in ScenarioContext.", email, scenarioContext.getString("merchantId"));
+    // }
 
     @Given("merchant {string} has a product {string} with original ProductID {string} price {double} and stock {int}, whose actual ProductID is stored as {string} and MerchantProductID as {string}")
     public void merchant_has_product_details_stored(String merchantEmail, String productName, String originalProdId, double price, int stock, String productKey, String mpKey) {
@@ -115,7 +116,7 @@ public class CouponStepDefinitions {
         product.setBrand("CouponBrand");
         product.setCategory("CouponCategory");
         Product savedProduct = productRepository.save(product);
-        sharedData.put(productKey, savedProduct.getProductId().toString()); // Store actual Product ID
+        scenarioContext.set(productKey, savedProduct.getProductId().toString()); // Store actual Product ID in ScenarioContext
         logger.info("Created Product '{}' with actual ID {}, stored as {}", productName, savedProduct.getProductId(), productKey);
 
         // Create MerchantProduct (link between merchant and product with specific stock/price)
@@ -127,22 +128,23 @@ public class CouponStepDefinitions {
 
     @Given("the following coupon is created for product {string} by the merchant and its ID is stored as {string}:")
     public void coupon_is_created_for_product_and_id_stored(String productKey, String couponSharedKey, DataTable dataTable) throws JsonProcessingException {
-        String productId = sharedData.get(productKey);
-        assertThat(productId).isNotNull().withFailMessage("Product ID for key '" + productKey + "' not found in sharedData.");
+        String productId = scenarioContext.getString(productKey); // Get from ScenarioContext
+        assertThat(productId).isNotNull().withFailMessage("Product ID for key '" + productKey + "' not found in ScenarioContext.");
 
         Map<String, String> row = dataTable.asMaps(String.class, String.class).get(0);
         String requestBody = objectMapper.writeValueAsString(row);
 
-        String path = "/merchants/" + sharedData.get("merchantId") + "/products/" + productId + "/coupons";
+        String path = "/merchants/" + scenarioContext.getString("merchantId") + "/products/" + productId + "/coupons"; // Get merchantId from ScenarioContext
 
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         ResponseEntity<String> response = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + path, entity, String.class);
+        scenarioContext.set("latestResponse", response); // Store response
 
         assertThat(response.getStatusCodeValue()).isEqualTo(201);
         String couponId = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$.couponId"), null);
         assertThat(couponId).isNotNull();
-        sharedData.put(couponSharedKey, couponId);
+        scenarioContext.set(couponSharedKey, couponId); // Store in ScenarioContext
         logger.info("Created coupon for product ID {}, stored coupon ID {} as {}", productId, couponId, couponSharedKey);
     }
 
@@ -150,23 +152,30 @@ public class CouponStepDefinitions {
     private HttpHeaders buildAuthenticatedHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        if (sharedData.containsKey("merchantToken")) {
-            headers.setBearerAuth(sharedData.get("merchantToken"));
+        if (scenarioContext.containsKey("merchantToken")) { // Check ScenarioContext
+            headers.setBearerAuth(scenarioContext.getString("merchantToken")); // Get from ScenarioContext
         } else {
-            logger.warn("No merchant token found for authenticated request!");
+            logger.warn("No merchant token found for authenticated request in ScenarioContext!");
         }
         return headers;
     }
 
     private String resolvePathPlaceholders(String path) {
         String resolvedPath = path;
-        for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (resolvedPath.contains("{" + entry.getKey() + "}")) {
-                resolvedPath = resolvedPath.replace("{" + entry.getKey() + "}", entry.getValue());
+        String[] keysToResolve = {"merchantId", "productId", "couponId", "lastCouponId"}; // Add other common keys if needed
+
+        for (String key : keysToResolve) {
+            if (resolvedPath.contains("{" + key + "}")) {
+                if (scenarioContext.containsKey(key)) {
+                    resolvedPath = resolvedPath.replace("{" + key + "}", scenarioContext.getString(key));
+                } else {
+                    logger.warn("Placeholder {{{}}} found in path but key not in ScenarioContext.", key);
+                }
             }
         }
+
         if (resolvedPath.contains("{") && resolvedPath.contains("}")) {
-             logger.warn("Path {} still contains unresolved placeholders: {}", path, resolvedPath);
+             logger.warn("Path {} still contains unresolved placeholders after specific key resolution: {}", path, resolvedPath);
         }
         return resolvedPath;
     }
@@ -176,12 +185,13 @@ public class CouponStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers); // Assuming body doesn't need placeholder resolution here
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+        scenarioContext.set("latestResponse", response);
         // Store couponId if it's a create response
         try {
-            if (latestResponse.getStatusCodeValue() == 201 && latestResponse.getBody().contains("couponId")) {
-                 String couponId = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$.couponId"), null);
-                 if (couponId != null) sharedData.put("lastCouponId", couponId);
+            if (response.getStatusCodeValue() == 201 && response.getBody().contains("couponId")) {
+                 String couponId = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$.couponId"), null);
+                 if (couponId != null) scenarioContext.set("lastCouponId", couponId); // Store in ScenarioContext
             }
         } catch (Exception e) { /* ignore if not relevant */ }
     }
@@ -191,7 +201,8 @@ public class CouponStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
+        scenarioContext.set("latestResponse", response);
     }
 
     @When("a DELETE request is made to {string} with an authenticated merchant")
@@ -199,7 +210,8 @@ public class CouponStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.DELETE, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.DELETE, entity, String.class);
+        scenarioContext.set("latestResponse", response);
     }
 
     @When("a POST request is made to {string} with the following body:") // Unauthenticated
@@ -208,47 +220,65 @@ public class CouponStepDefinitions {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+        scenarioContext.set("latestResponse", response);
     }
 
     // --- Then Steps ---
+
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a_key(String jsonPath) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class); // Prefer context
+        assertThat(localLatestResponse.getBody()).isNotNull();
+        com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath);
     }
 
     @Then("the response body should contain {string} with value {string}")
     public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+        assertThat(localLatestResponse.getBody()).isNotNull();
         String resolvedExpectedValue = expectedValue;
         if (expectedValue.startsWith("{") && expectedValue.endsWith("}")) {
-            resolvedExpectedValue = sharedData.getOrDefault(expectedValue.substring(1, expectedValue.length()-1), expectedValue);
+            String placeholderKey = expectedValue.substring(1, expectedValue.length() - 1);
+            if (scenarioContext.containsKey(placeholderKey)) {
+                resolvedExpectedValue = scenarioContext.getString(placeholderKey);
+            } else {
+                 logger.warn("Placeholder value for key '{}' not found in ScenarioContext, using literal: {}", placeholderKey, expectedValue);
+            }
         }
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
+        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath), "");
         assertThat(actualValue).isEqualTo(resolvedExpectedValue);
     }
 
-    @Then("the response body should contain {string} with number value {string}")
-    public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        Object actualObject = com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
-        BigDecimal actualValue = new BigDecimal(actualObject.toString());
-        BigDecimal expectedDecimalValue = new BigDecimal(expectedValue);
-        assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should contain {string} with number value {string}")
+    // public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValue) {
+    //     ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(localLatestResponse.getBody()).isNotNull();
+    //     Object actualObject = com.jayway.jsonpath.JsonPath.read(localLatestResponse.getBody(), "$." + jsonPath);
+    //     BigDecimal actualValue = new BigDecimal(actualObject.toString());
+    //     BigDecimal expectedDecimalValue = new BigDecimal(expectedValue);
+    //     assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
+    // }
 
-    @Then("the response body should be an empty list")
-    public void the_response_body_should_be_an_empty_list() {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().isEmpty();
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should be an empty list")
+    // public void the_response_body_should_be_an_empty_list() {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(localLatestResponse.getBody()).isNotNull();
+    //     List<?> list = com.jayway.jsonpath.JsonPath.parse(localLatestResponse.getBody()).read("$");
+    //     assertThat(list).isNotNull().isEmpty();
+    // }
 
     @Then("the response body should be a list with {int} item(s)")
     public void the_response_body_should_be_a_list_with_items(int count) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> localLatestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+        assertThat(localLatestResponse.getBody()).isNotNull();
+        List<?> list = com.jayway.jsonpath.JsonPath.parse(localLatestResponse.getBody()).read("$");
         assertThat(list).isNotNull().hasSize(count);
     }
 
