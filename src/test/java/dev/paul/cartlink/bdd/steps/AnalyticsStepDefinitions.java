@@ -39,9 +39,9 @@ public class AnalyticsStepDefinitions {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private LinkAnalyticsRepository linkAnalyticsRepository;
     @Autowired private ScenarioContext scenarioContext;
+    @Autowired private CommonStepDefinitions commonStepDefinitions; // Ensure common steps can be called if needed, or rely on Cucumber glue
 
 
-    private ResponseEntity<String> latestResponse;
     // private Map<String, String> sharedData = new HashMap<>(); // Will use scenarioContext instead
 
     @Before
@@ -96,32 +96,15 @@ public class AnalyticsStepDefinitions {
     }
 
 
-    @When("a GET request is made to {string}")
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders()); // No auth needed as per controller
-        String resolvedPath = resolvePlaceholders(path);
-        String baseUrl = scenarioContext.getString("apiBaseUrl");
-        latestResponse = restTemplate.exchange(baseUrl + resolvedPath, HttpMethod.GET, entity, String.class);
-        logger.info("GET to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
-
-    @When("a POST request is made to {string} with the following body:")
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        // No auth needed as per controller
-        String resolvedPath = resolvePlaceholders(path);
-        String resolvedBody = resolvePlaceholders(requestBody);
-        String baseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpEntity<String> entity = new HttpEntity<>(resolvedBody, headers);
-        latestResponse = restTemplate.postForEntity(baseUrl + resolvedPath, entity, String.class);
-        logger.info("POST to {}: Status {}, Body {}", resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
+    // Removed duplicate GET request method, will use the one from CommonStepDefinitions
+    // Removed duplicate POST request method, will use the one from CommonStepDefinitions
 
     // --- Then Steps ---
     @Then("the response body should contain a {string} with number value {string}")
     public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValueKey) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+        assertThat(latestResponse).isNotNull();
         assertThat(latestResponse.getBody()).isNotNull();
         // Resolve expected value if it's a placeholder (e.g. "{analyticsTestId}")
         String resolvedExpectedValueStr = resolvePlaceholders(expectedValueKey);
@@ -135,9 +118,6 @@ public class AnalyticsStepDefinitions {
         assertThat(actualValue).isEqualByComparingTo(expectedDecimalValue);
     }
 
-    @Then("the response body should contain a {string}") // General key check
-    public void the_response_body_should_contain_a_key(String jsonPath) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
-    }
+    // Removed duplicate method "the_response_body_should_contain_a_key"
+    // as it's covered by CommonStepDefinitions.the_response_body_should_contain_a
 }

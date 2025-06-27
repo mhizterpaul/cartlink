@@ -206,34 +206,11 @@ public class ReviewStepDefinitions {
         assertThat(actualValue).isEqualTo(expectedValue);
     }
 
-    @Then("the response body should contain an {string} field")
-    public void the_response_body_should_contain_an_error_field(String fieldName) {
-        // This method is an alias for "the response body should contain a {string}"
-        // which is now in CommonStepDefinitions.java.
-        // For a direct fix without changing feature files immediately, replicate the logic:
-        @SuppressWarnings("unchecked")
-        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
-         if (latestResponse == null) {
-            // If latestResponse is not in scenarioContext, try the local one.
-            // This indicates a need to standardize where 'latestResponse' is stored/retrieved.
-            // For now, to fix compilation, let's assume it might be local if not in scenarioContext.
-            // However, the goal is to always use scenarioContext.
-            // if (this.latestResponse == null) { // local latestResponse is removed
-            //      throw new IllegalStateException("No 'latestResponse' found in ScenarioContext or local field.");
-            // }
-            // responseEntity = this.latestResponse;
-             throw new IllegalStateException("No 'latestResponse' found in ScenarioContext.");
-        }
-        String responseBody = latestResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        try {
-            com.jayway.jsonpath.JsonPath.read(responseBody, "$." + fieldName);
-        } catch (com.jayway.jsonpath.PathNotFoundException e) {
-            throw new AssertionError("JSON path (field) '" + fieldName + "' not found in response body: " + responseBody, e);
-        } catch (Exception e) {
-            throw new AssertionError("Error reading JSON path (field) '" + fieldName + "' in response body: " + responseBody, e);
-        }
-    }
+    // This step is now defined in CommonStepDefinitions.java
+    // @Then("the response body should contain an {string} field")
+    // public void the_response_body_should_contain_an_error_field(String fieldName) {
+    //     ...
+    // }
 
     @Then("the response body should be a list")
     public void the_response_body_should_be_a_list() {

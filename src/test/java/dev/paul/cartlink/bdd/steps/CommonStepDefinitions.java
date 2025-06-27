@@ -21,28 +21,35 @@ import java.util.List; // Added for List
 import java.util.Objects; // Added for Objects.toString
 import java.math.BigDecimal; // Added for BigDecimal
 import static org.assertj.core.api.Assertions.assertThat; // Added for assertThat
+// import org.springframework.stereotype.Component; // Removed import
 
+// @Component // Make this a Spring-managed bean - REMOVED as per Cucumber best practice
 public class CommonStepDefinitions {
 
     private static final Logger logger = LoggerFactory.getLogger(CommonStepDefinitions.class);
 
-    @Autowired
-    private ScenarioContext scenarioContext;
-
-    @Autowired // Added for RestTemplate
-    private RestTemplate restTemplate; // Added for RestTemplate
-
-    @Autowired
-    private CustomerRepository customerRepository; // For creating customer if not exists
+    private final ScenarioContext scenarioContext;
+    private final org.springframework.boot.test.web.client.TestRestTemplate restTemplate; // Changed type
+    private final ObjectMapper objectMapper;
+    private final CustomerRepository customerRepository;
+    private final dev.paul.cartlink.merchant.repository.MerchantRepository merchantRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Autowired
-    private dev.paul.cartlink.merchant.repository.MerchantRepository merchantRepository; // For merchant operations
-
-    @Autowired
-    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder; // For merchant password
-
-    @Autowired
-    private ObjectMapper objectMapper; // For serializing login request
+    public CommonStepDefinitions(
+            ScenarioContext scenarioContext,
+            org.springframework.boot.test.web.client.TestRestTemplate restTemplate, // Changed type
+            ObjectMapper objectMapper,
+            CustomerRepository customerRepository,
+            dev.paul.cartlink.merchant.repository.MerchantRepository merchantRepository,
+            org.springframework.security.crypto.password.PasswordEncoder passwordEncoder) {
+        this.scenarioContext = scenarioContext;
+        this.restTemplate = restTemplate;
+        this.objectMapper = objectMapper;
+        this.customerRepository = customerRepository;
+        this.merchantRepository = merchantRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Given("the API base URL is {string}")
     public void the_api_base_url_is(String baseUrl) {
@@ -55,14 +62,50 @@ public class CommonStepDefinitions {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
+        // Check for authentication tokens in ScenarioContext
+        if (scenarioContext.containsKey("merchantToken")) {
+            headers.setBearerAuth(scenarioContext.getString("merchantToken"));
+            logger.info("COMMON POST: Using merchantToken for authentication.");
+        } else if (scenarioContext.containsKey("customerToken")) {
+            headers.setBearerAuth(scenarioContext.getString("customerToken"));
+            logger.info("COMMON POST: Using customerToken for authentication.");
+        }
+
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        String resolvedPath = resolvePathPlaceholdersCommon(path); // Resolve path placeholders
+
+        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvedPath, entity, String.class);
         scenarioContext.set("latestResponse", response); // Store response in ScenarioContext
 
-        logger.info("COMMON POST request to {}{} with body: {}", apiBaseUrl, path, requestBody);
+        logger.info("COMMON POST request to {}{} with body: {}", apiBaseUrl, resolvedPath, requestBody);
         logger.info("COMMON Response status: {}, body: {}", response.getStatusCode(), response.getBody());
     }
+
+    // Helper method to resolve path placeholders, similar to what was in MerchantProductStepDefinitions
+    private String resolvePathPlaceholdersCommon(String path) {
+        String resolvedPath = path;
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        java.util.regex.Matcher matcher = pattern.matcher(resolvedPath);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            if (scenarioContext.containsKey(key)) {
+                matcher.appendReplacement(sb, scenarioContext.getString(key));
+            } else {
+                logger.warn("COMMON RESOLVE: Placeholder {{{}}} found in path but key not in ScenarioContext.", key);
+                matcher.appendReplacement(sb, matcher.group(0)); // Keep original placeholder if not found
+            }
+        }
+        matcher.appendTail(sb);
+        resolvedPath = sb.toString();
+
+        if (resolvedPath.contains("{") && resolvedPath.contains("}")) {
+             logger.warn("COMMON RESOLVE: Path {} still contains unresolved placeholders: {}", path, resolvedPath);
+        }
+        return resolvedPath;
+    }
+
 
     @Then("the response status code should be {int}")
     public void the_response_status_code_should_be(Integer statusCode) {
@@ -79,11 +122,22 @@ public class CommonStepDefinitions {
     public void a_get_request_is_made_to(String path) {
         String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
+        // Check for authentication tokens in ScenarioContext
+        if (scenarioContext.containsKey("merchantToken")) {
+            headers.setBearerAuth(scenarioContext.getString("merchantToken"));
+            logger.info("COMMON GET: Using merchantToken for authentication.");
+        } else if (scenarioContext.containsKey("customerToken")) {
+            headers.setBearerAuth(scenarioContext.getString("customerToken"));
+            logger.info("COMMON GET: Using customerToken for authentication.");
+        }
+
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
+        String resolvedPath = resolvePathPlaceholdersCommon(path); // Resolve path placeholders
+
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.GET, entity, String.class);
         scenarioContext.set("latestResponse", response);
 
-        logger.info("COMMON GET request to {}{}", apiBaseUrl, path);
+        logger.info("COMMON GET request to {}{}", apiBaseUrl, resolvedPath);
         logger.info("COMMON Response status: {}, body: {}", response.getStatusCode(), response.getBody());
     }
 
@@ -362,5 +416,116 @@ public class CommonStepDefinitions {
             // For now, assume it's expected to be a list if this step is used.
             throw new AssertionError("Error parsing response body as a list or list was not empty: " + responseBody, e);
         }
+    }
+
+    @When("a GET request is made to {string} with an authenticated merchant")
+    public void a_get_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON); // Though not strictly needed for GET, good practice
+        if (scenarioContext.containsKey("merchantToken")) {
+            headers.setBearerAuth(scenarioContext.getString("merchantToken"));
+            logger.info("COMMON AUTH MERCHANT GET: Using merchantToken for authentication.");
+        } else {
+            logger.warn("COMMON AUTH MERCHANT GET: merchantToken not found in ScenarioContext for supposedly authenticated request!");
+            // Depending on strictness, could throw an error here or proceed (expecting a 401/403)
+        }
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String resolvedPath = resolvePathPlaceholdersCommon(path); // Use existing helper
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.GET, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("COMMON AUTH MERCHANT GET request to {}{} - Status: {}, Body: {}", apiBaseUrl, resolvedPath, response.getStatusCodeValue(), response.getBody());
+    }
+
+    @When("a DELETE request is made to {string} with an authenticated merchant")
+    public void a_delete_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+        HttpHeaders headers = new HttpHeaders();
+        // Content-Type might not be strictly necessary for DELETE but doesn't hurt
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (scenarioContext.containsKey("merchantToken")) {
+            headers.setBearerAuth(scenarioContext.getString("merchantToken"));
+            logger.info("COMMON AUTH MERCHANT DELETE: Using merchantToken for authentication.");
+        } else {
+            logger.warn("COMMON AUTH MERCHANT DELETE: merchantToken not found in ScenarioContext for supposedly authenticated request!");
+            // Consider throwing error or proceeding to expect 401/403
+        }
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String resolvedPath = resolvePathPlaceholdersCommon(path); // Use existing helper
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("COMMON AUTH MERCHANT DELETE request to {}{} - Status: {}, Body: {}", apiBaseUrl, resolvedPath, response.getStatusCodeValue(), response.getBody());
+    }
+
+    @Then("the response body should be a list with {int} item(s)")
+    public void the_response_body_should_be_a_list_with_items(int count) {
+        @SuppressWarnings("unchecked")
+        ResponseEntity<String> latestResponse = scenarioContext.get("latestResponse", ResponseEntity.class);
+        if (latestResponse == null) {
+            throw new IllegalStateException("No 'latestResponse' found in ScenarioContext.");
+        }
+        String responseBody = latestResponse.getBody();
+        assertThat(responseBody).isNotNull();
+        try {
+            List<?> list = com.jayway.jsonpath.JsonPath.parse(responseBody).read("$");
+            assertThat(list).isNotNull().hasSize(count);
+        } catch (Exception e) {
+            throw new AssertionError("Error parsing response body as a list or asserting size: " + responseBody, e);
+        }
+    }
+
+    @Then("the response body should contain an {string} field")
+    public void the_response_body_should_contain_an_error_field(String fieldName) {
+        // This implementation assumes that if a field is an "error field",
+        // it's sufficient to just check for its existence using the common key check.
+        the_response_body_should_contain_a(fieldName);
+        logger.info("COMMON: Checked for error field '{}' in response body.", fieldName);
+    }
+
+    @When("a POST request is made to {string} with an authenticated customer and the following body:")
+    public void a_post_request_is_made_to_with_authenticated_customer_and_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        if (scenarioContext.containsKey("customerToken")) {
+            headers.setBearerAuth(scenarioContext.getString("customerToken"));
+            logger.info("COMMON AUTH CUSTOMER POST: Using customerToken for authentication.");
+        } else {
+            logger.warn("COMMON AUTH CUSTOMER POST: customerToken not found in ScenarioContext for authenticated request!");
+            // Depending on strictness, could throw an error here or proceed (expecting a 401/403)
+        }
+
+        String resolvedPath = resolvePathPlaceholdersCommon(path);
+        String resolvedBody = resolvePathPlaceholdersCommon(requestBody); // Assuming generic placeholder resolver works for body too
+
+        HttpEntity<String> entity = new HttpEntity<>(resolvedBody, headers);
+        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + resolvedPath, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+        logger.info("COMMON AUTH CUSTOMER POST request to {}{} with body: {} - Status: {}, Body: {}",
+                    apiBaseUrl, resolvedPath, resolvedBody, response.getStatusCodeValue(), response.getBody());
+    }
+
+    @When("a GET request is made to {string} with an authenticated customer")
+    public void a_get_request_is_made_to_with_authenticated_customer(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+        HttpHeaders headers = new HttpHeaders();
+        // Specifically for authenticated customer
+        if (scenarioContext.containsKey("customerToken")) {
+            headers.setBearerAuth(scenarioContext.getString("customerToken"));
+            logger.info("COMMON AUTH CUSTOMER GET: Using customerToken for authentication.");
+        } else {
+            logger.warn("COMMON AUTH CUSTOMER GET: customerToken not found in ScenarioContext for authenticated request!");
+            // Depending on strictness, could throw an error here or proceed (expecting a 401/403)
+        }
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        String resolvedPath = resolvePathPlaceholdersCommon(path);
+
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.GET, entity, String.class);
+        scenarioContext.set("latestResponse", response);
+
+        logger.info("COMMON AUTH CUSTOMER GET request to {}{}", apiBaseUrl, resolvedPath);
+        logger.info("COMMON Response status: {}, body: {}", response.getStatusCode(), response.getBody());
     }
 }

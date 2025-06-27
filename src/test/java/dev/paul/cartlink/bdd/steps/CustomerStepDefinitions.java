@@ -41,9 +41,8 @@ public class CustomerStepDefinitions {
     @Autowired
     private ScenarioContext scenarioContext;
 
-    // Shared state between steps
-    private ResponseEntity<String> latestResponse;
-    private Map<String, String> sharedData = new HashMap<>(); // For tokens, customer IDs etc.
+    // private ResponseEntity<String> latestResponse; // Removed: Now using ScenarioContext
+    // No longer using local sharedData map
 
     @Before
     public void setUp() {
@@ -61,15 +60,7 @@ public class CustomerStepDefinitions {
 
     // This step is now in CommonStepDefinitions.java
     // @When("a POST request is made to {string} with the following body:")
-    // public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-    //     HttpHeaders headers = new HttpHeaders();
-    //     headers.setContentType(MediaType.APPLICATION_JSON);
-    //     HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-    //     latestResponse = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
-    //     logger.info("POST request to {}{} with body: {}", apiBaseUrl, path, requestBody);
-    //     logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
-    // }
+    // ...
 
     @When("a PUT request is made to {string} with the following body:") // Unauthenticated PUT
     public void a_put_request_is_made_to_with_body(String path, String requestBody) {
@@ -77,29 +68,19 @@ public class CustomerStepDefinitions {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.PUT, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + path, HttpMethod.PUT, entity, String.class);
+        scenarioContext.set("latestResponse", response); // Use ScenarioContext
         logger.info("PUT request to {}{} with body: {}", apiBaseUrl, path, requestBody);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
+        logger.info("Response status: {}, body: {}", response.getStatusCode(), response.getBody());
     }
 
     // --- Customer Specific Authenticated Steps ---
 
-    @When("a POST request is made to {string} with an authenticated customer and the following body:")
-    public void a_post_request_is_made_to_with_an_authenticated_customer_and_the_following_body(String path, String requestBody) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        String customerToken = scenarioContext.getString("customerToken");
-        if (customerToken != null) {
-            headers.setBearerAuth(customerToken);
-        } else {
-            logger.warn("No customerToken found in ScenarioContext for authenticated POST request!");
-        }
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
-        logger.info("Authenticated Customer POST request to {}{} with body: {}", apiBaseUrl, path, requestBody);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @When("a POST request is made to {string} with an authenticated customer and the following body:")
+    // public void a_post_request_is_made_to_with_an_authenticated_customer_and_the_following_body(String path, String requestBody) {
+    //    ...
+    // }
 
     @When("a PUT request is made to {string} with an authenticated customer and the following body:")
     public void a_put_request_is_made_to_with_an_authenticated_customer_and_the_following_body(String path, String requestBody) {
@@ -114,27 +95,17 @@ public class CustomerStepDefinitions {
             logger.warn("No customerToken found in ScenarioContext for authenticated PUT request!");
         }
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
+        scenarioContext.set("latestResponse", response); // Use ScenarioContext
         logger.info("Authenticated Customer PUT request to {}{} with body: {}", apiBaseUrl, resolvedPath, requestBody);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
+        logger.info("Response status: {}, body: {}", response.getStatusCode(), response.getBody());
     }
 
-    @When("a GET request is made to {string} with an authenticated customer")
-    public void a_get_request_is_made_to_with_an_authenticated_customer(String path) {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        String resolvedPath = resolveCustomerPathVariables(path);
-        HttpHeaders headers = new HttpHeaders();
-        String customerToken = scenarioContext.getString("customerToken");
-        if (customerToken != null) {
-             headers.setBearerAuth(customerToken);
-        } else {
-            logger.warn("No customerToken found in ScenarioContext for authenticated GET request!");
-        }
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.GET, entity, String.class);
-        logger.info("Authenticated Customer GET request to {}{}", apiBaseUrl, resolvedPath);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @When("a GET request is made to {string} with an authenticated customer")
+    // public void a_get_request_is_made_to_with_an_authenticated_customer(String path) {
+    //    ...
+    // }
 
     @When("a DELETE request is made to {string} with an authenticated customer")
     public void a_delete_request_is_made_to_with_an_authenticated_customer(String path) {
@@ -148,9 +119,10 @@ public class CustomerStepDefinitions {
             logger.warn("No customerToken found in ScenarioContext for authenticated DELETE request!");
         }
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
+        ResponseEntity<String> response = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
+        scenarioContext.set("latestResponse", response); // Use ScenarioContext
         logger.info("Authenticated Customer DELETE request to {}{}", apiBaseUrl, resolvedPath);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
+        logger.info("Response status: {}, body: {}", response.getStatusCode(), response.getBody());
     }
 
 
@@ -159,62 +131,14 @@ public class CustomerStepDefinitions {
 
     // This step can be moved to a common/generic step definitions file
     // @Then("the response body should contain {string} with value {string}")
-    // public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-    //     @SuppressWarnings("unchecked")
-    //     ResponseEntity<String> responseEntity = scenarioContext.get("latestResponse", ResponseEntity.class);
-    //     String responseBody = responseEntity.getBody();
-    //     assertThat(responseBody).isNotNull();
-    //     try {
-    //         String actualValue = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath).toString();
-    //         assertThat(actualValue).isEqualTo(expectedValue);
-    //     } catch (com.jayway.jsonpath.PathNotFoundException e) {
-    //         throw new AssertionError("JSON path '" + jsonPath + "' not found in response body: " + responseBody, e);
-    //     } catch (Exception e) {
-    //         throw new AssertionError("Error reading JSON path '" + jsonPath + "' in response body: " + responseBody, e);
-    //     }
-    // }
+    // ... (rest of commented out method)
 
     // @Then("the response body should contain {string} with boolean value {string}")
-    // public void the_response_body_should_contain_with_boolean_value(String jsonPath, String expectedValueStr) {
-    //     @SuppressWarnings("unchecked")
-    //     ResponseEntity<String> responseEntity = scenarioContext.get("latestResponse", ResponseEntity.class);
-    //     String responseBody = responseEntity.getBody();
-    //     assertThat(responseBody).isNotNull();
-    //     boolean expectedValue = Boolean.parseBoolean(expectedValueStr);
-    //     try {
-    //         boolean actualValue = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
-    //         assertThat(actualValue).isEqualTo(expectedValue);
-    //     } catch (com.jayway.jsonpath.PathNotFoundException e) {
-    //         throw new AssertionError("JSON path '" + jsonPath + "' not found in response body: " + responseBody, e);
-    //     } catch (Exception e) {
-    //         throw new AssertionError("Error reading JSON path '" + jsonPath + "' in response body: " + responseBody, e);
-    //     }
-    // }
+    // ... (rest of commented out method)
 
     // This step can be moved to a common/generic step definitions file
     // @Then("the response body should contain a message like {string}")
-    // public void the_response_body_should_contain_a_message_like(String messageSubstring) {
-    //     @SuppressWarnings("unchecked")
-    //     ResponseEntity<String> responseEntity = scenarioContext.get("latestResponse", ResponseEntity.class);
-    //     String responseBody = responseEntity.getBody();
-    //     assertThat(responseBody).isNotNull();
-    //     boolean found = false;
-    //     try {
-    //         String message = com.jayway.jsonpath.JsonPath.read(responseBody, "$.message");
-    //         if (message != null && message.contains(messageSubstring)) found = true;
-    //     } catch (Exception e) { /* ignore */ }
-    //     if (!found) {
-    //         try {
-    //             String error = com.jayway.jsonpath.JsonPath.read(responseBody, "$.error");
-    //             if (error != null && error.contains(messageSubstring)) found = true;
-    //         } catch (Exception e) { /* ignore */ }
-    //     }
-    //     if (!found) {
-    //          assertThat(responseBody).containsIgnoringCase(messageSubstring);
-    //     } else {
-    //         // Assertion is implicitly true if found via JsonPath
-    //     }
-    // }
+    // ... (rest of commented out method)
 
     @Given("a customer already exists with email {string}")
     public void a_customer_already_exists_with_email(String email) {
@@ -226,26 +150,14 @@ public class CustomerStepDefinitions {
         Long id = Long.parseLong(idString);
         if (customerRepository.findById(id).isEmpty()) {
             if (customerRepository.findByEmail(email).isPresent()) {
-                // If email exists but ID doesn't match, this is a problematic test data setup.
-                // For now, we'll assume this means we should create one with this email if ID is free.
-                // Or, ideally, the test should ensure IDs are unique or handled by sequence.
                 logger.warn("Customer with email {} already exists but not with ID {}. Test data might be inconsistent.", email, id);
-                // To be safe, let's not create a duplicate email. This step might need refinement
-                // if strict ID control for new entities is needed.
-                // For now, we rely on the findByEmail check in createCustomer.
             }
             Customer customer = createCustomerIfNotExists(email, "SpecificId", "User", "+234555666777");
-            // The ID is auto-generated. This step definition cannot guarantee a specific ID '123' on creation
-            // unless we modify the entity or use a direct save with ID if allowed (usually not for auto-generated).
-            // So, for this step to be robust, the test should likely CREATE a customer, get its ID, then use that ID.
-            // Or, the test setup needs to ensure a customer with a known ID (e.g. from a test data script) exists.
-            // For now, we'll store the created customer's actual ID if we just created them.
-            sharedData.put("customerId_" + email, customer.getCustomerId().toString());
+            // Storing the actual ID under a key that includes the email for potential retrieval if needed by that specific email.
+            // However, if the test logic strictly depends on the symbolic 'idString' as the key, this needs careful handling.
+            scenarioContext.set("customerId_" + email, customer.getCustomerId().toString()); // Use ScenarioContext
             logger.info("Ensured customer {} exists. Actual ID for tests (if newly created): {}. Requested test ID was {}",
                         email, customer.getCustomerId(), id);
-            // This makes the scenario "Given a customer "get.cust@example.com" exists with ID "123""
-            // slightly less direct if we can't force ID 123.
-            // The test should then use the ID from sharedData.
         }
     }
 
