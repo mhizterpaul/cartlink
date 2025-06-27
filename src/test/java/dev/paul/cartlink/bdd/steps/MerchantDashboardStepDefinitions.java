@@ -6,11 +6,11 @@ import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

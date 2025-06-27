@@ -5,11 +5,11 @@ import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,9 +103,12 @@ public class GeneralAuthStepDefinitions {
         assertThat(mediaType.toString()).containsIgnoringCase(expectedContentType); // Use contains for text/html;charset=UTF-8
     }
 
-    @Then("the response body should contain {string}")
-    public void the_response_body_should_contain_string(String expectedSubstring) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        assertThat(latestResponse.getBody()).contains(expectedSubstring);
-    }
+    // This step is now in CommonStepDefinitions.java as "the response body should include the text {string}"
+    // or "the response body should contain a {string}" for JSON path.
+    // Feature files using this step need to be updated.
+    // @Then("the response body should contain {string}")
+    // public void the_response_body_should_contain_string(String expectedSubstring) {
+    //     assertThat(latestResponse.getBody()).isNotNull();
+    //     assertThat(latestResponse.getBody()).contains(expectedSubstring);
+    // }
 }

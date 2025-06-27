@@ -9,11 +9,11 @@ import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,18 +80,26 @@ public class MerchantProductStepDefinitions {
     public void tearDown() {
     }
 
-    @Given("a merchant is logged in with email {string} and password {string}")
-    public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        // Ensure merchant exists
+    @Given("a merchant {string} exists with password {string}")
+    public void a_merchant_exists_with_password(String email, String password) {
         if (merchantRepository.findByEmail(email).isEmpty()) {
             Merchant merchant = new Merchant();
             merchant.setEmail(email);
             merchant.setPassword(passwordEncoder.encode(password));
-            merchant.setFirstName("ProductTest");
-            merchant.setLastName("Merchant");
+            merchant.setFirstName(email.split("@")[0]); // Simple first name
+            merchant.setLastName("User"); // Standardized last name
             merchantRepository.save(merchant);
+            logger.info("Ensured merchant {} exists for test.", email);
         }
+    }
+
+    // This step was previously named a_merchant_is_logged_in_with_email_and_password
+    // It's now generalized and calls the above existence check.
+    @Given("a merchant {string} is logged in with password {string}")
+    public void a_merchant_is_logged_in_with_password(String email, String password) throws JsonProcessingException {
+        a_merchant_exists_with_password(email, password); // Ensure merchant exists
+
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
 
         Map<String, String> loginRequest = new HashMap<>();
         loginRequest.put("email", email);
@@ -113,6 +121,36 @@ public class MerchantProductStepDefinitions {
         sharedData.put("merchantToken", token);
         sharedData.put("merchantId", merchantId);
         logger.info("Merchant {} logged in. Token and ID stored.", email);
+    }
+
+    @Given("merchant {string} has a product {string} with price {double} and stock {int}, whose merchantProductId is stored as {string}")
+    public void merchant_has_a_product_stored_as(String merchantEmail, String productName, double price, int stock, String storageKey) {
+        Merchant merchant = merchantRepository.findByEmail(merchantEmail)
+                .orElseThrow(() -> new AssertionError("Merchant " + merchantEmail + " not found for product setup."));
+
+        // Create a generic base product if one doesn't exist by a similar name, or find existing.
+        // This step focuses on the MerchantProduct, assuming base Product exists or can be generically created.
+        List<dev.paul.cartlink.product.model.Product> existingProducts = productRepository.findByNameContainingIgnoreCase(productName);
+        dev.paul.cartlink.product.model.Product baseProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
+
+        if (baseProduct == null) {
+            dev.paul.cartlink.product.model.Product p = new dev.paul.cartlink.product.model.Product();
+            p.setName(productName);
+            p.setBrand("TestBrand");
+            p.setCategory("TestCategory");
+            baseProduct = productRepository.save(p);
+        }
+
+        dev.paul.cartlink.merchant.model.MerchantProduct merchantProduct = new dev.paul.cartlink.merchant.model.MerchantProduct();
+        merchantProduct.setMerchant(merchant);
+        merchantProduct.setProduct(baseProduct);
+        merchantProduct.setPrice(price);
+        merchantProduct.setStock(stock);
+        merchantProduct.setDescription("Product for " + merchantEmail);
+        merchantProduct = merchantProductRepository.save(merchantProduct);
+
+        sharedData.put(storageKey, merchantProduct.getId().toString());
+        logger.info("Created merchant product for {} with ID {}, stored as {}.", merchantEmail, merchantProduct.getId(), storageKey);
     }
 
     private HttpHeaders buildAuthenticatedHeaders() {
@@ -205,16 +243,60 @@ public class MerchantProductStepDefinitions {
         }
     }
 
+    @When("merchant {string} attempts to update merchant product {string} with the following body:")
+    public void merchant_attempts_to_update_merchant_product_with_body(String attackerEmail, String targetProductKey, String requestBody) {
+        // This step assumes 'attackerEmail' is already logged in and their token is in sharedData.get("merchantToken")
+        // It also assumes targetProductKey (e.g., "{product_of_merchant_b}") resolves to an ID via sharedData
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+        String resolvedPath = resolveMerchantProductPathVariables("/merchants/products/" + targetProductKey); // Path uses the key directly
+
+        HttpHeaders headers = buildAuthenticatedHeaders(); // Uses token of currently logged-in merchant (attacker)
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.PUT, entity, String.class);
+        logger.info("Merchant {} attempting to update product at {}: Status {}, Body {}", attackerEmail, resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
+    }
+
+    @When("merchant {string} attempts to delete merchant product {string}")
+    public void merchant_attempts_to_delete_merchant_product(String attackerEmail, String targetProductKey) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+        String resolvedPath = resolveMerchantProductPathVariables("/merchants/products/" + targetProductKey);
+
+        HttpHeaders headers = buildAuthenticatedHeaders(); // Uses token of currently logged-in merchant (attacker)
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+        latestResponse = restTemplate.exchange(apiBaseUrl + resolvedPath, HttpMethod.DELETE, entity, String.class);
+        logger.info("Merchant {} attempting to delete product at {}: Status {}, Body {}", attackerEmail, resolvedPath, latestResponse.getStatusCodeValue(), latestResponse.getBody());
+    }
+
     private String resolveMerchantProductPathVariables(String path) {
         String resolvedPath = path;
         // Example: /merchants/products/{mpid_to_update}
-        for (Map.Entry<String, String> entry : sharedData.entrySet()) {
-            if (path.contains("{" + entry.getKey() + "}")) {
-                resolvedPath = resolvedPath.replace("{" + entry.getKey() + "}", entry.getValue());
+        // Resolve placeholders like {product_of_merchant_b} using sharedData
+        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        java.util.regex.Matcher matcher = pattern.matcher(resolvedPath);
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            String key = matcher.group(1);
+            String value = sharedData.get(key);
+            if (value != null) {
+                matcher.appendReplacement(sb, value);
+            } else {
+                logger.warn("Placeholder {} not found in sharedData for path resolution", key);
+                // Keep the placeholder as is, or throw an error, depending on desired strictness
+                matcher.appendReplacement(sb, matcher.group(0)); // Keep original placeholder if not found
             }
         }
-        if (resolvedPath.contains("{") && resolvedPath.contains("}")) {
-             logger.warn("Path {} still contains unresolved placeholders.", resolvedPath);
+        matcher.appendTail(sb);
+        resolvedPath = sb.toString();
+
+        // Original simple replacement logic (can be removed or kept as fallback if needed)
+        // for (Map.Entry<String, String> entry : sharedData.entrySet()) {
+        //     if (path.contains("{" + entry.getKey() + "}")) {
+        //         resolvedPath = resolvedPath.replace("{" + entry.getKey() + "}", entry.getValue());
+        //     }
+        // }
+
+        if (resolvedPath.contains("{") && resolvedPath.contains("}")) { // Check after attempting resolution
+             logger.warn("Path {} still contains unresolved placeholders after attempted resolution: {}", path, resolvedPath);
         }
         return resolvedPath;
     }

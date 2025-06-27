@@ -18,11 +18,11 @@ import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
 import dev.paul.cartlink.bdd.context.ScenarioContext;
 
-import io.cucumber.java.After;
-import io.cucumber.java.Before;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.After; // Correct hook import
+import io.cucumber.java.Before; // Correct hook import
+import io.cucumber.java.en.Given; // Correct Gherkin keyword import
+import io.cucumber.java.en.Then; // Correct Gherkin keyword import
+import io.cucumber.java.en.When; // Correct Gherkin keyword import
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,34 +77,35 @@ public class ComplaintStepDefinitions {
     @After
     public void tearDown() {}
 
-    @Given("a customer is logged in with email {string} and password {string}")
-    public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
-        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
-        if (customerRepository.findByEmail(email).isEmpty()) {
-            Customer customer = new Customer();
-            customer.setEmail(email);
-            customer.setFirstName("ComplaintTest");
-            customer.setLastName("User");
-            customerRepository.save(customer);
-        }
-
-        Map<String, String> loginRequest = new HashMap<>();
-        loginRequest.put("email", email);
-        loginRequest.put("password", password); // CustomerService handles actual auth
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class);
-
-        if(loginResponse.getStatusCodeValue() != 200) {
-            logger.error("Customer login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
-             assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
-        }
-        String responseBody = loginResponse.getBody();
-        String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
-        sharedData.put("customerToken", token);
-        logger.info("Customer {} logged in for complaint test. Token stored.", email);
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Given("a customer is logged in with email {string} and password {string}")
+    // public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+    //     String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
+    //     if (customerRepository.findByEmail(email).isEmpty()) {
+    //         Customer customer = new Customer();
+    //         customer.setEmail(email);
+    //         customer.setFirstName("ComplaintTest");
+    //         customer.setLastName("User");
+    //         customerRepository.save(customer);
+    //     }
+    //
+    //     Map<String, String> loginRequest = new HashMap<>();
+    //     loginRequest.put("email", email);
+    //     loginRequest.put("password", password); // CustomerService handles actual auth
+    //     HttpHeaders headers = new HttpHeaders();
+    //     headers.setContentType(MediaType.APPLICATION_JSON);
+    //     HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
+    //     ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class);
+    //
+    //     if(loginResponse.getStatusCodeValue() != 200) {
+    //         logger.error("Customer login failed for {}: {} - {}", email, loginResponse.getStatusCodeValue(), loginResponse.getBody());
+    //          assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
+    //     }
+    //     String responseBody = loginResponse.getBody();
+    //     String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
+    //     sharedData.put("customerToken", token); // This will need to use ScenarioContext if other steps here need the token
+    //     logger.info("Customer {} logged in for complaint test. Token stored.", email);
+    // }
 
     @Given("an order with ID {string} exists for customer {string} and its actual ID is stored as {string}")
     public void an_order_exists_for_customer_stored_as(String symbolicOrderId, String customerEmail, String sharedKey) {
@@ -131,16 +132,15 @@ public class ComplaintStepDefinitions {
             p.setCategory("Category");
             tempProduct = productRepository.save(p);
         }
-        final Product finalProduct = tempProduct;
-
-        final Product finalProduct = tempProduct; // final or effectively final variable
+        // final Product finalProduct = tempProduct; // Removed first duplicate declaration
+        final Product productForMerchantProduct = tempProduct; // Renamed for clarity in this scope
 
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
 
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, finalProduct).orElseGet(()-> {
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, productForMerchantProduct).orElseGet(()-> { // Used finalMerchant and renamed productForMerchantProduct
             MerchantProduct mp = new MerchantProduct();
-            mp.setMerchant(merchant);
-            mp.setProduct(finalProduct); // Use finalProduct here
+            mp.setMerchant(finalMerchant); // Used finalMerchant
+            mp.setProduct(productForMerchantProduct); // Used renamed productForMerchantProduct
             mp.setPrice(10.0);
             mp.setStock(100);
             mp.setDescription("Product for complaint testing");
@@ -200,10 +200,11 @@ public class ComplaintStepDefinitions {
     private HttpHeaders buildAuthenticatedCustomerHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        if (sharedData.containsKey("customerToken")) {
-            headers.setBearerAuth(sharedData.get("customerToken"));
+        String customerToken = scenarioContext.getString("customerToken");
+        if (customerToken != null) {
+            headers.setBearerAuth(customerToken);
         } else {
-             logger.warn("No customerToken found in sharedData for authenticated request!");
+             logger.warn("No customerToken found in ScenarioContext for authenticated request!");
         }
         return headers;
     }
@@ -231,26 +232,27 @@ public class ComplaintStepDefinitions {
         return resolvedBody;
     }
 
-    @When("a POST request is made to {string} with an authenticated customer and the following body:")
-    public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
+    @When("for a complaint, a POST request is made to {string} with an authenticated customer and the following body:")
+    public void for_a_complaint_a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
         latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), entity, String.class);
         logger.info("Authenticated Customer POST to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
-    @When("a POST request is made to {string} with the following body:") // For unauthenticated
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-        HttpHeaders headers = new HttpHeaders(); // No auth
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), entity, String.class);
-         logger.info("Unauthenticated POST to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @When("a POST request is made to {string} with the following body:") // For unauthenticated
+    // public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+    //     HttpHeaders headers = new HttpHeaders(); // No auth
+    //     headers.setContentType(MediaType.APPLICATION_JSON);
+    //     HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
+    //     latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), entity, String.class);
+    //      logger.info("Unauthenticated POST to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
+    // }
 
 
-    @When("a GET request is made to {string} with an authenticated customer")
-    public void a_get_request_is_made_to_with_auth_customer(String path) {
+    @When("for a complaint, a GET request is made to {string} with an authenticated customer")
+    public void for_a_complaint_a_get_request_is_made_to_with_auth_customer(String path) {
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
@@ -258,36 +260,43 @@ public class ComplaintStepDefinitions {
     }
 
     // --- Then Steps (Common) ---
-    @Then("the response body should contain a {string}")
-    public void the_response_body_should_contain_a(String jsonPath) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath);
-    }
+    // Step moved to CommonStepDefinitions.java
 
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        String resolvedExpectedValue = resolveBodyPlaceholders(expectedValue); // Resolve if expected value is like {complaintOrderId}
-        String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(latestResponse.getBody(), "$." + jsonPath), "");
-        assertThat(actualValue).isEqualTo(resolvedExpectedValue);
-    }
+    // @Then("the response body should contain {string} with value {string}")
+    // public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> response = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(response.getBody()).isNotNull();
+    //     String resolvedExpectedValue = resolveBodyPlaceholders(expectedValue); // Resolve if expected value is like {complaintOrderId}
+    //     String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$." + jsonPath), "");
+    //     assertThat(actualValue).isEqualTo(resolvedExpectedValue);
+    // }
 
-    @Then("the response body should contain an {string} field")
-    public void the_response_body_should_contain_an_error_field(String fieldName) {
-        the_response_body_should_contain_a(fieldName);
-    }
+    // This step is now redundant as the generic one in CommonStepDefinitions can be used.
+    // Feature files should be updated if they used "an {string} field" to use "a {string} field"
+    // @Then("the response body should contain an {string} field")
+    // public void the_response_body_should_contain_an_error_field(String fieldName) {
+    //     // This would require calling the common step, which is not standard across step def classes
+    //     // Or, feature files should just use the "a {string}" version directly.
+    // }
 
-    @Then("the response body should be a list with at least {int} item(s)")
-    public void the_response_body_should_be_a_list_with_at_least_items(int minCount) {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().hasSizeGreaterThanOrEqualTo(minCount);
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should be a list with at least {int} item(s)")
+    // public void the_response_body_should_be_a_list_with_at_least_items(int minCount) {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> response = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(response.getBody()).isNotNull();
+    //     List<?> list = com.jayway.jsonpath.JsonPath.parse(response.getBody()).read("$");
+    //     assertThat(list).isNotNull().hasSizeGreaterThanOrEqualTo(minCount);
+    // }
 
-    @Then("the response body should be an empty list")
-    public void the_response_body_should_be_an_empty_list() {
-        assertThat(latestResponse.getBody()).isNotNull();
-        List<?> list = com.jayway.jsonpath.JsonPath.parse(latestResponse.getBody()).read("$");
-        assertThat(list).isNotNull().isEmpty();
-    }
+    // This step is now in CommonStepDefinitions.java
+    // @Then("the response body should be an empty list")
+    // public void the_response_body_should_be_an_empty_list() {
+    //     @SuppressWarnings("unchecked")
+    //     ResponseEntity<String> response = scenarioContext.get("latestResponse", ResponseEntity.class);
+    //     assertThat(response.getBody()).isNotNull();
+    //     List<?> list = com.jayway.jsonpath.JsonPath.parse(response.getBody()).read("$");
+    //     assertThat(list).isNotNull().isEmpty();
+    // }
 }

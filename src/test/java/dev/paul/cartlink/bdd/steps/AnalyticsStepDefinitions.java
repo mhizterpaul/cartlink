@@ -3,12 +3,12 @@ package dev.paul.cartlink.bdd.steps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
-import dev.paul.cartlink.bdd.context.ScenarioContext;
+import dev.paul.cartlink.bdd.context.ScenarioContext; // Keep this one
 
-import dev.paul.cartlink.bdd.ScenarioContext;
+// import dev.paul.cartlink.bdd.ScenarioContext; // Remove this duplicate
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.en.Given; // Added back
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
