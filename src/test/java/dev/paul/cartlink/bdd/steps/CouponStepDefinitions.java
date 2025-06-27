@@ -10,6 +10,7 @@ import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -46,10 +47,14 @@ public class CouponStepDefinitions {
     @Autowired private MerchantRepository merchantRepository;
     @Autowired private ProductRepository productRepository;
     @Autowired private MerchantProductRepository merchantProductRepository; // To create MerchantProduct link
+
     @Autowired private CouponRepository couponRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
+    // private String apiBaseUrl; // Removed, using ScenarioContext
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
 
@@ -66,13 +71,9 @@ public class CouponStepDefinitions {
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     @Given("a merchant is logged in with email {string} and password {string}")
     public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         Merchant merchant = merchantRepository.findByEmail(email).orElseGet(() -> {
             Merchant m = new Merchant();
             m.setEmail(email);
@@ -136,7 +137,7 @@ public class CouponStepDefinitions {
 
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + path, entity, String.class);
 
         assertThat(response.getStatusCodeValue()).isEqualTo(201);
         String couponId = Objects.toString(com.jayway.jsonpath.JsonPath.read(response.getBody(), "$.couponId"), null);
@@ -172,6 +173,7 @@ public class CouponStepDefinitions {
 
     @When("a POST request is made to {string} with an authenticated merchant and the following body:")
     public void a_post_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers); // Assuming body doesn't need placeholder resolution here
         latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
@@ -186,6 +188,7 @@ public class CouponStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated merchant")
     public void a_get_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
@@ -193,6 +196,7 @@ public class CouponStepDefinitions {
 
     @When("a DELETE request is made to {string} with an authenticated merchant")
     public void a_delete_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.DELETE, entity, String.class);
@@ -200,25 +204,14 @@ public class CouponStepDefinitions {
 
     @When("a POST request is made to {string} with the following body:") // Unauthenticated
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
     }
 
-    @When("a GET request is made to {string}") // Unauthenticated
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders());
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-    }
-
-
     // --- Then Steps ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a_key(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();

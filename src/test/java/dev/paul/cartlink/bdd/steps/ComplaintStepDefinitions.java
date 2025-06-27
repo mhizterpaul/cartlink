@@ -16,6 +16,7 @@ import dev.paul.cartlink.complaint.model.ComplaintStatus; // Import ComplaintSta
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -54,10 +55,13 @@ public class ComplaintStepDefinitions {
     @Autowired private ProductRepository productRepository;
     @Autowired private MerchantProductRepository merchantProductRepository;
     @Autowired private OrderRepository orderRepository;
+
     @Autowired private ComplaintRepository complaintRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
 
@@ -73,13 +77,9 @@ public class ComplaintStepDefinitions {
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     @Given("a customer is logged in with email {string} and password {string}")
     public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         if (customerRepository.findByEmail(email).isEmpty()) {
             Customer customer = new Customer();
             customer.setEmail(email);
@@ -112,7 +112,7 @@ public class ComplaintStepDefinitions {
             .orElseThrow(() -> new AssertionError("Customer " + customerEmail + " not found for order setup."));
 
         // Create a dummy merchant and product for the order if they don't exist
-        Merchant merchant = merchantRepository.findByEmail("complaint.merchant@example.com").orElseGet(() -> {
+        Merchant tempMerchant = merchantRepository.findByEmail("complaint.merchant@example.com").orElseGet(() -> {
             Merchant m = new Merchant();
             m.setEmail("complaint.merchant@example.com");
             m.setFirstName("Complaint");
@@ -120,22 +120,24 @@ public class ComplaintStepDefinitions {
             m.setPassword(passwordEncoder.encode("password"));
             return merchantRepository.save(m);
         });
+        final Merchant finalMerchant = tempMerchant;
 
         List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase("ComplaintProduct");
-        Product product = existingProducts.isEmpty() ? null : existingProducts.get(0);
-        if (product == null) {
+        Product tempProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
+        if (tempProduct == null) {
             Product p = new Product();
             p.setName("ComplaintProduct");
             p.setBrand("Brand");
             p.setCategory("Category");
-            product = productRepository.save(p);
+            tempProduct = productRepository.save(p);
         }
+        final Product finalProduct = tempProduct;
 
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, product).orElseGet(()-> {
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> {
             MerchantProduct mp = new MerchantProduct();
-            mp.setMerchant(merchant);
-            mp.setProduct(product);
+            mp.setMerchant(finalMerchant);
+            mp.setProduct(finalProduct);
             mp.setPrice(10.0);
             mp.setStock(100);
             mp.setDescription("Product for complaint testing");
@@ -230,7 +232,7 @@ public class ComplaintStepDefinitions {
     public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), entity, String.class);
         logger.info("Authenticated Customer POST to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
@@ -239,7 +241,7 @@ public class ComplaintStepDefinitions {
         HttpHeaders headers = new HttpHeaders(); // No auth
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
+        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), entity, String.class);
          logger.info("Unauthenticated POST to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
@@ -248,24 +250,11 @@ public class ComplaintStepDefinitions {
     public void a_get_request_is_made_to_with_auth_customer(String path) {
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
+        latestResponse = restTemplate.exchange(scenarioContext.getString("apiBaseUrl") + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
         logger.info("Authenticated Customer GET to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
-    @When("a GET request is made to {string}") // For unauthenticated
-    public void a_get_request_is_made_to(String path) {
-        HttpHeaders headers = new HttpHeaders(); // No auth
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-        logger.info("Unauthenticated GET to {}: Status {}, Body {}", resolvePathPlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
-
     // --- Then Steps (Common) ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();

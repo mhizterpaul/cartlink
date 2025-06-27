@@ -3,6 +3,7 @@ package dev.paul.cartlink.bdd.steps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -35,9 +36,12 @@ public class GeneralAuthStepDefinitions {
     @Autowired private TestRestTemplate restTemplate;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private MerchantRepository merchantRepository;
+
     @Autowired private PasswordEncoder passwordEncoder;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     private ResponseEntity<String> latestResponse;
     // No sharedData needed specifically for tokens here as they are passed in requests
 
@@ -49,11 +53,6 @@ public class GeneralAuthStepDefinitions {
 
     @After
     public void tearDown() {}
-
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
 
     @Given("a merchant {string} exists with password {string}")
     public void a_merchant_exists_with_password(String email, String password) {
@@ -91,28 +90,7 @@ public class GeneralAuthStepDefinitions {
         logger.info("Set password reset token {} for merchant {}", token, email);
     }
 
-    @When("a GET request is made to {string}")
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders());
-        latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
-        logger.info("GET to {}: Status {}, Body (partial): {}", path, latestResponse.getStatusCodeValue(), latestResponse.getBody() != null ? latestResponse.getBody().substring(0, Math.min(100, latestResponse.getBody().length())) : "null");
-    }
-
-    @When("a POST request is made to {string} with the following body:")
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
-        logger.info("POST to {}: Status {}, Body: {}", path, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
-
     // --- Then Steps ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should be the string {string}")
     public void the_response_body_should_be_the_string(String expectedBody) {
         assertThat(latestResponse.getBody()).isEqualTo(expectedBody);

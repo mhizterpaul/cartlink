@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.customer.model.Customer;
 import dev.paul.cartlink.customer.repository.CustomerRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
@@ -37,8 +38,10 @@ public class CustomerStepDefinitions {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     // Shared state between steps
-    private String apiBaseUrl;
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>(); // For tokens, customer IDs etc.
 
@@ -56,14 +59,10 @@ public class CustomerStepDefinitions {
 
     // --- Generic Steps (can be refactored into a common class later) ---
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     // This step can be moved to a common/generic step definitions file
     @When("a POST request is made to {string} with the following body:")
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
@@ -74,6 +73,7 @@ public class CustomerStepDefinitions {
 
     @When("a PUT request is made to {string} with the following body:") // Unauthenticated PUT
     public void a_put_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
@@ -82,18 +82,11 @@ public class CustomerStepDefinitions {
         logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
     }
 
-    @When("a GET request is made to {string}") // Unauthenticated GET
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders());
-        latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
-        logger.info("GET request to {}{}", apiBaseUrl, path);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
-    }
-
     // --- Customer Specific Authenticated Steps ---
 
     @When("a POST request is made to {string} with an authenticated customer and the following body:")
     public void a_post_request_is_made_to_with_an_authenticated_customer_and_the_following_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(sharedData.get("customerToken")); // Assumes customerToken was stored
@@ -105,6 +98,7 @@ public class CustomerStepDefinitions {
 
     @When("a PUT request is made to {string} with an authenticated customer and the following body:")
     public void a_put_request_is_made_to_with_an_authenticated_customer_and_the_following_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolveCustomerPathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -119,6 +113,7 @@ public class CustomerStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated customer")
     public void a_get_request_is_made_to_with_an_authenticated_customer(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolveCustomerPathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         if (sharedData.containsKey("customerToken")) {
@@ -132,6 +127,7 @@ public class CustomerStepDefinitions {
 
     @When("a DELETE request is made to {string} with an authenticated customer")
     public void a_delete_request_is_made_to_with_an_authenticated_customer(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolveCustomerPathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         if (sharedData.containsKey("customerToken")) {
@@ -143,12 +139,6 @@ public class CustomerStepDefinitions {
         logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
     }
 
-
-    // This step can be moved to a common/generic step definitions file
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
 
     // This step can be moved to a common/generic step definitions file
     @Then("the response body should contain a {string}")
@@ -222,17 +212,6 @@ public class CustomerStepDefinitions {
         createCustomerIfNotExists(email, "Existing", "Customer", "+234000000000");
     }
 
-    @Given("a customer already exists with email {string} and password {string} in the system")
-    public void a_customer_already_exists_with_email_and_password_in_system(String email, String password) {
-        // This step is primarily for conceptual clarity in the feature file.
-        // The actual password is not stored on the Customer entity directly in this project.
-        // CustomerService.authenticate(email, password) handles the logic.
-        // We just ensure the customer record exists.
-        createCustomerIfNotExists(email, "LoginTest", "User", "+234111222333");
-        // Store password conceptually for login step if needed, though not used by this method directly.
-        // sharedData.put(email + "_password", password);
-    }
-
     @Given("a customer {string} exists with ID {string}")
     public void a_customer_exists_with_id(String email, String idString) {
         Long id = Long.parseLong(idString);
@@ -300,7 +279,7 @@ public class CustomerStepDefinitions {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
 
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class);
+        ResponseEntity<String> loginResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + "/customers/login", entity, String.class);
 
         String responseBody = loginResponse.getBody();
         logger.info("Customer login attempt for {} status: {}, body: {}", email, loginResponse.getStatusCodeValue(), responseBody);

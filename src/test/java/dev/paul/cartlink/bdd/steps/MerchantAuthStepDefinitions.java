@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.merchant.model.Merchant; // Corrected path
 import dev.paul.cartlink.merchant.repository.MerchantRepository; // Corrected path
 import dev.paul.cartlink.merchant.dto.SignUpRequest; // Corrected path and class name
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
@@ -43,7 +44,9 @@ public class MerchantAuthStepDefinitions {
     @Autowired
     private ObjectMapper objectMapper; // For converting objects to JSON strings
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>(); // To share data between steps, e.g. tokens
 
@@ -59,23 +62,9 @@ public class MerchantAuthStepDefinitions {
         // Clean up any state after scenarios, e.g., created users for preconditions.
     }
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
-    @When("a POST request is made to {string} with the following body:")
-    public void a_post_request_is_made_to_with_body(String path, String requestBody) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
-        logger.info("POST request to {}{} with body: {}", apiBaseUrl, path, requestBody);
-        logger.info("Response status: {}, body: {}", latestResponse.getStatusCode(), latestResponse.getBody());
-    }
-
     @When("a POST request is made to {string} with an authenticated user and the following body:")
     public void a_post_request_is_made_to_with_an_authenticated_user_and_the_following_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(sharedData.get("token")); // Assumes token was stored
@@ -88,6 +77,7 @@ public class MerchantAuthStepDefinitions {
 
     @When("a PUT request is made to {string} with an authenticated user and the following body:")
     public void a_put_request_is_made_to_with_an_authenticated_user_and_the_following_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolvePathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -103,6 +93,7 @@ public class MerchantAuthStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated user")
     public void a_get_request_is_made_to_with_an_authenticated_user(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolvePathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         if (sharedData.containsKey("token")) {
@@ -116,6 +107,7 @@ public class MerchantAuthStepDefinitions {
 
     @When("a PUT request is made to {string} without authentication and the following body:")
     public void a_put_request_is_made_to_without_authentication_and_the_following_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolvePathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -127,6 +119,7 @@ public class MerchantAuthStepDefinitions {
 
     @When("a GET request is made to {string} without authentication")
     public void a_get_request_is_made_to_without_authentication(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolvePathVariables(path);
         HttpHeaders headers = new HttpHeaders();
         HttpEntity<String> entity = new HttpEntity<>(headers);
@@ -136,11 +129,6 @@ public class MerchantAuthStepDefinitions {
     }
 
 
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a(String jsonPath) {
         String responseBody = latestResponse.getBody();
@@ -148,20 +136,6 @@ public class MerchantAuthStepDefinitions {
         try {
             // Using Jayway JsonPath to check for existence and non-null/non-empty value
             com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath);
-        } catch (com.jayway.jsonpath.PathNotFoundException e) {
-            throw new AssertionError("JSON path '" + jsonPath + "' not found in response body: " + responseBody, e);
-        } catch (Exception e) {
-            throw new AssertionError("Error reading JSON path '" + jsonPath + "' in response body: " + responseBody, e);
-        }
-    }
-
-    @Then("the response body should contain {string} with value {string}")
-    public void the_response_body_should_contain_with_value(String jsonPath, String expectedValue) {
-        String responseBody = latestResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        try {
-            String actualValue = com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath).toString();
-            assertThat(actualValue).isEqualTo(expectedValue);
         } catch (com.jayway.jsonpath.PathNotFoundException e) {
             throw new AssertionError("JSON path '" + jsonPath + "' not found in response body: " + responseBody, e);
         } catch (Exception e) {
@@ -290,7 +264,7 @@ public class MerchantAuthStepDefinitions {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
 
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/merchants/login", entity, String.class);
+        ResponseEntity<String> loginResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + "/merchants/login", entity, String.class);
         assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
 
         String responseBody = loginResponse.getBody();

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -35,10 +36,13 @@ public class MerchantDashboardStepDefinitions {
 
     @Autowired private TestRestTemplate restTemplate;
     @Autowired private ObjectMapper objectMapper;
+
     @Autowired private MerchantRepository merchantRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+    // private String apiBaseUrl; // Removed
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>(); // For auth token
 
@@ -53,13 +57,9 @@ public class MerchantDashboardStepDefinitions {
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     @Given("a merchant is logged in with email {string} and password {string}")
     public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         if (merchantRepository.findByEmail(email).isEmpty()) {
             Merchant merchant = new Merchant();
             merchant.setEmail(email);
@@ -100,25 +100,14 @@ public class MerchantDashboardStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated merchant")
     public void a_get_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
         logger.info("Authenticated Merchant GET to {}: Status {}, Body {}", path, latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
-    @When("a GET request is made to {string}") // Unauthenticated
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders());
-        latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
-        logger.info("Unauthenticated GET to {}: Status {}, Body {}", path, latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
-
     // --- Then Steps (Common) ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}") // Check for key existence
     public void the_response_body_should_contain_a_key(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();
