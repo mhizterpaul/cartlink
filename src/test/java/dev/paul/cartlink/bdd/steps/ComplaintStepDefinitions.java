@@ -133,11 +133,14 @@ public class ComplaintStepDefinitions {
         }
         final Product finalProduct = tempProduct;
 
+        final Product finalProduct = tempProduct; // final or effectively final variable
+
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> {
+
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, finalProduct).orElseGet(()-> {
             MerchantProduct mp = new MerchantProduct();
-            mp.setMerchant(finalMerchant);
-            mp.setProduct(finalProduct);
+            mp.setMerchant(merchant);
+            mp.setProduct(finalProduct); // Use finalProduct here
             mp.setPrice(10.0);
             mp.setStock(100);
             mp.setDescription("Product for complaint testing");

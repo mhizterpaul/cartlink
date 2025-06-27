@@ -127,9 +127,13 @@ public class RefundStepDefinitions {
         }
         final Product finalProduct = tempProduct;
 
+        final Product finalProduct = tempProduct; // final or effectively final
+
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> {
-            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(finalMerchant); mp.setProduct(finalProduct);
+
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, finalProduct).orElseGet(()-> {
+            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(merchant); mp.setProduct(finalProduct); // use finalProduct
+
             mp.setPrice(20.0); mp.setStock(50); mp.setDescription("Product for refund testing");
             return merchantProductRepository.save(mp);
         });

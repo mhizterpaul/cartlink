@@ -1,35 +1,26 @@
 package dev.paul.cartlink.bdd.steps;
 
-import dev.paul.cartlink.bdd.context.ScenarioContext;
+
+import dev.paul.cartlink.bdd.ScenarioContext;
 import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then; // Added
-import io.cucumber.java.en.When; // Added for @When
-import org.slf4j.Logger; // Added
-import org.slf4j.LoggerFactory; // Added
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.web.client.TestRestTemplate; // Added
-import org.springframework.http.HttpEntity; // Added
-import org.springframework.http.HttpHeaders; // Added
-import org.springframework.http.HttpMethod; // Added
-import org.springframework.http.MediaType; // Added
-import org.springframework.http.ResponseEntity; // Added
-import java.util.Objects; // Added
-import static org.assertj.core.api.Assertions.assertThat; // Added
 
 public class CommonStepDefinitions {
 
-    private static final Logger logger = LoggerFactory.getLogger(CommonStepDefinitions.class); // Added
+    private static final Logger logger = LoggerFactory.getLogger(CommonStepDefinitions.class);
+
 
     @Autowired
     private ScenarioContext scenarioContext;
 
-    @Autowired
-    private TestRestTemplate restTemplate; // Added
 
     @Given("the API base URL is {string}")
     public void the_api_base_url_is(String baseUrl) {
         scenarioContext.set("apiBaseUrl", baseUrl);
-    }
+        logger.info("CommonStepDefinitions: API base URL set to: {}", baseUrl);
+
 
     @When("a POST request is made to {string} with the following body:")
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
@@ -89,5 +80,6 @@ public class CommonStepDefinitions {
         // For now, assuming expectedValue is literal or resolved by the caller's context if necessary.
         String actualValue = Objects.toString(com.jayway.jsonpath.JsonPath.read(responseBody, "$." + jsonPath), "");
         assertThat(actualValue).isEqualTo(expectedValue);
+
     }
 }
