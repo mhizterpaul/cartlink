@@ -13,6 +13,7 @@ import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -51,11 +52,15 @@ public class OrderStepDefinitions {
     @Autowired private ProductRepository productRepository;
     @Autowired private MerchantProductRepository merchantProductRepository;
     @Autowired private OrderRepository orderRepository;
+
     @Autowired private PasswordEncoder passwordEncoder;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
+    // private String apiBaseUrl; // Removed, will use scenarioContext.getString("apiBaseUrl")
 
     @Before
     public void setUp() {
@@ -71,14 +76,10 @@ public class OrderStepDefinitions {
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     // --- Merchant Login (from MerchantAuthStepDefinitions, simplified) ---
     @Given("a merchant is logged in with email {string} and password {string}")
     public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         if (merchantRepository.findByEmail(email).isEmpty()) {
             Merchant merchant = new Merchant();
             merchant.setEmail(email);
@@ -112,6 +113,7 @@ public class OrderStepDefinitions {
     // --- Customer Login (from CustomerStepDefinitions, simplified) ---
     @Given("a customer is logged in with email {string} and password {string}")
     public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         if (customerRepository.findByEmail(email).isEmpty()) {
             Customer customer = new Customer();
             customer.setEmail(email);
@@ -276,6 +278,7 @@ public class OrderStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated merchant")
     public void a_get_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthHeaders(true);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolvePath(path), HttpMethod.GET, entity, String.class);
@@ -283,6 +286,7 @@ public class OrderStepDefinitions {
 
     @When("a PUT request is made to {string} with an authenticated merchant and the following body:")
     public void a_put_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthHeaders(true);
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolvePath(path), HttpMethod.PUT, entity, String.class);
@@ -290,6 +294,7 @@ public class OrderStepDefinitions {
 
     @When("a PATCH request is made to {string} with an authenticated merchant")
     public void a_patch_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthHeaders(true);
         HttpEntity<Void> entity = new HttpEntity<>(headers); // PATCH can have body, but this scenario doesn't
         latestResponse = restTemplate.exchange(apiBaseUrl + resolvePath(path), HttpMethod.PATCH, entity, String.class);
@@ -297,6 +302,7 @@ public class OrderStepDefinitions {
 
     @When("a POST request is made to {string} with an authenticated customer and the following body:")
     public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         sharedData.put("customerTokenRequired", "true"); // Mark that token is expected
         HttpHeaders headers = buildAuthHeaders(false); // Customer token
         HttpEntity<String> entity = new HttpEntity<>(resolveBody(requestBody), headers);
@@ -306,17 +312,13 @@ public class OrderStepDefinitions {
 
     @When("a POST request is made to {string} with the following body:") // For guest customer
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthHeaders(false); // No customer token expected / needed for guest
         HttpEntity<String> entity = new HttpEntity<>(resolveBody(requestBody), headers);
         latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePath(path), entity, String.class);
     }
 
     // --- Then Steps (Common) ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain an {string}")
     public void the_response_body_should_contain_an(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();

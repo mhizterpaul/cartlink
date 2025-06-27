@@ -26,7 +26,7 @@ Feature: Customer Place Order
     And the response body should contain "status" with value "PENDING" # Default initial status
 
   Scenario: Guest Customer Places an Order Successfully (New Guest)
-    When a POST request is made to "/customers/orders" with the following body:
+    When a guest POST request is made to "/customers/orders" with the following body:
       """
       {
         "customer": {
@@ -46,7 +46,7 @@ Feature: Customer Place Order
 
   Scenario: Guest Customer Places an Order Successfully (Existing Guest Email)
     Given a customer "guest.existing@example.com" exists with first name "GuestExisting"
-    When a POST request is made to "/customers/orders" with the following body:
+    When a guest POST request is made to "/customers/orders" with the following body:
       """
       {
         "customer": {
@@ -110,7 +110,7 @@ Feature: Customer Place Order
     And the response body should contain an "error" field # e.g. "quantity is required"
 
   Scenario: Guest Customer Places Order with Missing Customer Email
-    When a POST request is made to "/customers/orders" with the following body:
+    When a guest POST request is made to "/customers/orders" with the following body:
       """
       {
         "customer": {

@@ -16,6 +16,7 @@ import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -55,9 +56,12 @@ public class RefundStepDefinitions {
     @Autowired private MerchantProductRepository merchantProductRepository;
     @Autowired private OrderRepository orderRepository;
     @Autowired private RefundRequestRepository refundRequestRepository;
+
     @Autowired private PasswordEncoder passwordEncoder;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
 
@@ -71,13 +75,9 @@ public class RefundStepDefinitions {
     @After
     public void tearDown() {}
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     @Given("a customer is logged in with email {string} and password {string}")
     public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         if (customerRepository.findByEmail(email).isEmpty()) {
             Customer customer = new Customer();
             customer.setEmail(email);
@@ -117,17 +117,19 @@ public class RefundStepDefinitions {
             m.setFirstName("Refund"); m.setLastName("Merchant"); m.setPassword(passwordEncoder.encode("password"));
             return merchantRepository.save(m);
         });
+        final Merchant finalMerchant = merchant;
 
         List<Product> existingProducts = productRepository.findByNameContainingIgnoreCase("RefundProduct");
-        Product product = existingProducts.isEmpty() ? null : existingProducts.get(0);
-        if (product == null) {
+        Product tempProduct = existingProducts.isEmpty() ? null : existingProducts.get(0);
+        if (tempProduct == null) {
             Product p = new Product(); p.setName("RefundProduct"); p.setBrand("Brand"); p.setCategory("Category");
-            product = productRepository.save(p);
+            tempProduct = productRepository.save(p);
         }
+        final Product finalProduct = tempProduct;
 
         // Use the findByMerchantAndProduct method added to MerchantProductRepository
-        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(merchant, product).orElseGet(()-> {
-            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(merchant); mp.setProduct(product);
+        MerchantProduct merchantProduct = merchantProductRepository.findByMerchantAndProduct(finalMerchant, finalProduct).orElseGet(()-> {
+            MerchantProduct mp = new MerchantProduct(); mp.setMerchant(finalMerchant); mp.setProduct(finalProduct);
             mp.setPrice(20.0); mp.setStock(50); mp.setDescription("Product for refund testing");
             return merchantProductRepository.save(mp);
         });
@@ -215,6 +217,7 @@ public class RefundStepDefinitions {
 
     @When("a POST request is made to {string} with an authenticated customer and the following body:")
     public void a_post_request_is_made_to_with_auth_customer_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
         latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePathPlaceholders(path), entity, String.class);
@@ -222,6 +225,7 @@ public class RefundStepDefinitions {
 
     @When("a POST request is made to {string} with the following body:")
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<String> entity = new HttpEntity<>(resolveBodyPlaceholders(requestBody), headers);
@@ -230,21 +234,10 @@ public class RefundStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated customer")
     public void a_get_request_is_made_to_with_auth_customer(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedCustomerHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-    }
-
-    @When("a GET request is made to {string}")
-    public void a_get_request_is_made_to(String path) {
-        HttpHeaders headers = new HttpHeaders();
-        HttpEntity<Void> entity = new HttpEntity<>(headers);
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePathPlaceholders(path), HttpMethod.GET, entity, String.class);
-    }
-
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
     }
 
     @Then("the response body should contain {string} with value {string}")
