@@ -1,8 +1,11 @@
 package dev.paul.cartlink.security;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
 import org.springframework.core.io.Resource;
@@ -22,8 +25,9 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 @Configuration
-@ConfigurationProperties(prefix = "rsa")
+// @ConfigurationProperties(prefix = "rsa") // No longer needed as we use @Value
 public class RsaKeyProperties {
+
     private String privateKeyLocation;
     private String publicKeyLocation;
     private final ResourceLoader resourceLoader;
@@ -42,6 +46,7 @@ public class RsaKeyProperties {
 
     private String readKeyFromResource(String location) throws IOException {
         Resource resource = resourceLoader.getResource(location);
+
         try (Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
             return FileCopyUtils.copyToString(reader);
         }
@@ -49,7 +54,9 @@ public class RsaKeyProperties {
 
     @Bean
     public RSAPrivateKey privateKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+
         String privateKeyPEM = readKeyFromResource(privateKeyLocation)
+
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
@@ -62,7 +69,9 @@ public class RsaKeyProperties {
 
     @Bean
     public RSAPublicKey publicKey() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+
         String publicKeyPEM = readKeyFromResource(publicKeyLocation)
+
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");

@@ -10,6 +10,9 @@ import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 @Suite
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features")
+
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "dev.paul.cartlink.bdd") // Broaden glue path
+
 public class CucumberTestRunner {
+    // This class remains empty, configuration is done via annotations
 }

@@ -12,6 +12,7 @@ import dev.paul.cartlink.order.model.OrderStatus;
 import dev.paul.cartlink.order.repository.OrderRepository;
 import dev.paul.cartlink.product.model.Product;
 import dev.paul.cartlink.product.repository.ProductRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -53,9 +54,12 @@ public class PaymentStepDefinitions {
     @Autowired private ProductRepository productRepository;
     @Autowired private MerchantProductRepository merchantProductRepository;
     @Autowired private OrderRepository orderRepository;
+
     @Autowired private PasswordEncoder passwordEncoder; // For creating dummy merchants if needed for product setup
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+    // private String apiBaseUrl; // Removed
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
 
@@ -68,11 +72,6 @@ public class PaymentStepDefinitions {
 
     @After
     public void tearDown() {}
-
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
 
     // Precondition steps to set up data
     @Given("a customer {string} exists")
@@ -170,12 +169,13 @@ public class PaymentStepDefinitions {
         }
 
         HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(map, headers);
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePlaceholders(path), entity, String.class);
+        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePlaceholders(path), entity, String.class);
         logger.info("POST Form to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
     @When("a POST request is made to {string} with no body")
     public void a_post_request_is_made_to_with_no_body(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders(); // No specific Content-Type needed for no-body POST
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePlaceholders(path), entity, String.class);
@@ -184,11 +184,6 @@ public class PaymentStepDefinitions {
 
 
     // --- Then Steps ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a_key(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();

@@ -3,6 +3,7 @@ package dev.paul.cartlink.bdd.steps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import dev.paul.cartlink.bdd.ScenarioContext;
 import io.cucumber.java.After;
@@ -34,9 +35,11 @@ public class AnalyticsStepDefinitions {
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsStepDefinitions.class);
 
     @Autowired private TestRestTemplate restTemplate;
+
     @Autowired private ObjectMapper objectMapper;
     @Autowired private LinkAnalyticsRepository linkAnalyticsRepository;
     @Autowired private ScenarioContext scenarioContext;
+
 
     private ResponseEntity<String> latestResponse;
     // private Map<String, String> sharedData = new HashMap<>(); // Will use scenarioContext instead
@@ -50,6 +53,7 @@ public class AnalyticsStepDefinitions {
 
     @After
     public void tearDown() {}
+
 
     // Removed duplicate @Given("the API base URL is {string}")
 
@@ -91,6 +95,7 @@ public class AnalyticsStepDefinitions {
         return sb.toString();
     }
 
+
     @When("a GET request is made to {string}")
     public void a_get_request_is_made_to(String path) {
         HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders()); // No auth needed as per controller
@@ -102,6 +107,7 @@ public class AnalyticsStepDefinitions {
 
     @When("a POST request is made to {string} with the following body:")
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         // No auth needed as per controller
@@ -114,11 +120,6 @@ public class AnalyticsStepDefinitions {
     }
 
     // --- Then Steps ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string} with number value {string}")
     public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValueKey) {
         assertThat(latestResponse.getBody()).isNotNull();

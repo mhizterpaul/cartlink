@@ -6,6 +6,7 @@ import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
 import dev.paul.cartlink.product.repository.ProductRepository;
 import dev.paul.cartlink.merchant.repository.MerchantProductRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -54,8 +55,11 @@ public class MerchantProductStepDefinitions {
     @Autowired
     private MerchantProductRepository merchantProductRepository; // To clean up merchant_products
 
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     // Shared state
-    private String apiBaseUrl;
+    // private String apiBaseUrl; // Removed
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>(); // For auth tokens, merchantId, merchantProductIds
 
@@ -76,13 +80,9 @@ public class MerchantProductStepDefinitions {
     public void tearDown() {
     }
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     @Given("a merchant is logged in with email {string} and password {string}")
     public void a_merchant_is_logged_in_with_email_and_password(String email, String password) throws JsonProcessingException {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         // Ensure merchant exists
         if (merchantRepository.findByEmail(email).isEmpty()) {
             Merchant merchant = new Merchant();
@@ -129,6 +129,7 @@ public class MerchantProductStepDefinitions {
 
     @When("a POST request is made to {string} with an authenticated merchant and the following body:")
     public void a_post_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         latestResponse = restTemplate.postForEntity(apiBaseUrl + path, entity, String.class);
@@ -145,6 +146,7 @@ public class MerchantProductStepDefinitions {
 
     @When("a GET request is made to {string} with an authenticated merchant")
     public void a_get_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + path, HttpMethod.GET, entity, String.class);
@@ -153,6 +155,7 @@ public class MerchantProductStepDefinitions {
 
     @When("a PUT request is made to {string} with an authenticated merchant and the following body:")
     public void a_put_request_is_made_to_with_auth_merchant_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolveMerchantProductPathVariables(path);
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
@@ -162,6 +165,7 @@ public class MerchantProductStepDefinitions {
 
     @When("a DELETE request is made to {string} with an authenticated merchant")
     public void a_delete_request_is_made_to_with_auth_merchant(String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         String resolvedPath = resolveMerchantProductPathVariables(path);
         HttpHeaders headers = buildAuthenticatedHeaders();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
@@ -216,11 +220,6 @@ public class MerchantProductStepDefinitions {
     }
 
     // --- Common Then Steps (can be refactored) ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();

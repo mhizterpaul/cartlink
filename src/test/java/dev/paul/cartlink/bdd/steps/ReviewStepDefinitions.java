@@ -8,6 +8,7 @@ import dev.paul.cartlink.customer.repository.CustomerRepository;
 import dev.paul.cartlink.customer.repository.ReviewRepository;
 import dev.paul.cartlink.merchant.model.Merchant;
 import dev.paul.cartlink.merchant.repository.MerchantRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -44,9 +45,12 @@ public class ReviewStepDefinitions {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private MerchantRepository merchantRepository;
     @Autowired private ReviewRepository reviewRepository;
+
     // No PasswordEncoder needed as Review endpoints don't involve direct login steps in this file.
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+    // private String apiBaseUrl; // Removed
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
 
@@ -61,11 +65,6 @@ public class ReviewStepDefinitions {
 
     @After
     public void tearDown() {}
-
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
 
     @Given("a customer {string} exists and their ID is stored as {string}")
     public void a_customer_exists_stored_as(String email, String customerKey) {
@@ -163,7 +162,7 @@ public class ReviewStepDefinitions {
         headers.setContentType(MediaType.APPLICATION_JSON);
         // No authentication on ReviewController POST, so no token needed.
         HttpEntity<String> entity = new HttpEntity<>(resolvePlaceholders(body), headers); // Resolve placeholders in body
-        latestResponse = restTemplate.postForEntity(apiBaseUrl + resolvePlaceholders(path), entity, String.class);
+        latestResponse = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + resolvePlaceholders(path), entity, String.class);
         logger.info("POST to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
     }
 
@@ -172,19 +171,7 @@ public class ReviewStepDefinitions {
         makePostRequest(path, requestBody);
     }
 
-    @When("a GET request is made to {string}")
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders());
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePlaceholders(path), HttpMethod.GET, entity, String.class);
-        logger.info("GET to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
-
     // --- Then Steps ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string}")
     public void the_response_body_should_contain_a_key(String jsonPath) {
         assertThat(latestResponse.getBody()).isNotNull();
