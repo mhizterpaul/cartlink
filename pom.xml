@@ -186,7 +186,7 @@
                 <activeByDefault>false</activeByDefault>
             </activation>
             <properties>
-                <maven.test.skip>true</maven.test.skip>
+                <maven.test.skip>false</maven.test.skip>
             </properties>
         </profile>
     </profiles>

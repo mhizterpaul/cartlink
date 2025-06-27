@@ -3,6 +3,7 @@ package dev.paul.cartlink.bdd.steps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.paul.cartlink.link.model.LinkAnalytics;
 import dev.paul.cartlink.link.repository.LinkAnalyticsRepository;
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -33,10 +34,13 @@ public class AnalyticsStepDefinitions {
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsStepDefinitions.class);
 
     @Autowired private TestRestTemplate restTemplate;
+
     @Autowired private ObjectMapper objectMapper;
     @Autowired private LinkAnalyticsRepository linkAnalyticsRepository;
 
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
+
     private ResponseEntity<String> latestResponse;
     private Map<String, String> sharedData = new HashMap<>();
 
@@ -49,11 +53,6 @@ public class AnalyticsStepDefinitions {
 
     @After
     public void tearDown() {}
-
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
 
     @Given("a LinkAnalytics entity exists with ID {string} and its actual ID is stored as {string}")
     public void a_link_analytics_entity_exists_stored_as(String symbolicId, String sharedKey) {
@@ -81,15 +80,9 @@ public class AnalyticsStepDefinitions {
         return resolvedValue;
     }
 
-    @When("a GET request is made to {string}")
-    public void a_get_request_is_made_to(String path) {
-        HttpEntity<Void> entity = new HttpEntity<>(new HttpHeaders()); // No auth needed as per controller
-        latestResponse = restTemplate.exchange(apiBaseUrl + resolvePlaceholders(path), HttpMethod.GET, entity, String.class);
-        logger.info("GET to {}: Status {}, Body {}", resolvePlaceholders(path), latestResponse.getStatusCodeValue(), latestResponse.getBody());
-    }
-
     @When("a POST request is made to {string} with the following body:")
     public void a_post_request_is_made_to_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         // No auth needed as per controller
@@ -99,11 +92,6 @@ public class AnalyticsStepDefinitions {
     }
 
     // --- Then Steps ---
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain a {string} with number value {string}")
     public void the_response_body_should_contain_with_number_value(String jsonPath, String expectedValueKey) {
         assertThat(latestResponse.getBody()).isNotNull();

@@ -10,6 +10,7 @@ import dev.paul.cartlink.merchant.repository.MerchantRepository; // Added
 import dev.paul.cartlink.merchant.model.MerchantProduct; // Added
 import dev.paul.cartlink.merchant.repository.MerchantProductRepository; // Added
 import org.springframework.security.crypto.password.PasswordEncoder; // Added
+import dev.paul.cartlink.bdd.context.ScenarioContext;
 
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.After;
@@ -64,7 +65,8 @@ public class CartStepDefinitions {
     private CustomerRepository customerRepository; // For logged-in user context if needed for cart
 
     // Shared state
-    private String apiBaseUrl;
+    @Autowired
+    private ScenarioContext scenarioContext;
     private ResponseEntity<String> latestResponse;
     private String cartCookieId; // To store and reuse the cart_cookie_id
     private Map<String, String> sharedData = new HashMap<>(); // For tokens, customer IDs, item IDs from responses
@@ -83,13 +85,9 @@ public class CartStepDefinitions {
         // Cleanup if necessary
     }
 
-    @Given("the API base URL is {string}")
-    public void the_api_base_url_is(String baseUrl) {
-        this.apiBaseUrl = baseUrl;
-    }
-
     @Given("a new cart session is started")
     public void a_new_cart_session_is_started() {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         // Make a simple request (like get empty cart) to ensure a cookie is set if not present
         // Or just initialize cartCookieId to null, first request will set it.
         // Forcing cookie generation by calling an endpoint that sets it:
@@ -193,7 +191,7 @@ public class CartStepDefinitions {
 
             HttpHeaders headers = buildHeadersWithCartCookie();
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-            ResponseEntity<String> response = restTemplate.postForEntity(apiBaseUrl + "/customers/cart/items", entity, String.class);
+            ResponseEntity<String> response = restTemplate.postForEntity(scenarioContext.getString("apiBaseUrl") + "/customers/cart/items", entity, String.class);
             extractCartCookie(response); // Update cookie if it changed (e.g. first item creates cart)
             assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
 
@@ -215,6 +213,7 @@ public class CartStepDefinitions {
 
     @When("a {word} request is made to {string} using the cart session")
     public void a_request_is_made_to_using_cart_session(String method, String path) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildHeadersWithCartCookie();
         HttpEntity<Void> entity = new HttpEntity<>(headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolveCartPathVariables(path), HttpMethod.valueOf(method.toUpperCase()), entity, String.class);
@@ -224,6 +223,7 @@ public class CartStepDefinitions {
 
     @When("a {word} request is made to {string} using the cart session with the following body:")
     public void a_request_is_made_to_using_cart_session_with_body(String method, String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         HttpHeaders headers = buildHeadersWithCartCookie();
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
         latestResponse = restTemplate.exchange(apiBaseUrl + resolveCartPathVariables(path), HttpMethod.valueOf(method.toUpperCase()), entity, String.class);
@@ -233,6 +233,7 @@ public class CartStepDefinitions {
 
     @When("a POST request is made to {string} using the cart session and authenticated customer with the following body:")
     public void a_post_request_is_made_to_using_cart_session_and_authenticated_customer_with_body(String path, String requestBody) {
+        String apiBaseUrl = scenarioContext.getString("apiBaseUrl");
         // This step assumes customerToken is already in sharedData via a "customer is logged in" step
         HttpHeaders headers = buildHeadersWithCartCookie(); // Will include Bearer token if present
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
@@ -243,11 +244,6 @@ public class CartStepDefinitions {
 
 
     // Then steps (can be common)
-    @Then("the response status code should be {int}")
-    public void the_response_status_code_should_be(Integer statusCode) {
-        assertThat(latestResponse.getStatusCodeValue()).isEqualTo(statusCode);
-    }
-
     @Then("the response body should contain {string}")
     public void the_response_body_should_contain_a(String jsonPath) {
         String responseBody = latestResponse.getBody();
@@ -296,36 +292,6 @@ public class CartStepDefinitions {
         // This is a simplified check. A more robust check might parse the JSON
         // and look for a specific "message" or "error" field.
         assertThat(responseBody).containsIgnoringCase(messageSubstring);
-    }
-
-    @Given("a customer is logged in with email {string} and password {string}")
-    public void a_customer_is_logged_in_with_email_and_password(String email, String password) throws Exception {
-        // Re-use login mechanism from CustomerStepDefinitions if possible, or duplicate simplified version
-        // For now, direct call to login endpoint (assuming it's available and works)
-        if (customerRepository.findByEmail(email).isEmpty()) {
-            Customer customer = new Customer();
-            customer.setEmail(email);
-            customer.setFirstName("Checkout");
-            customer.setLastName("User");
-            customerRepository.save(customer);
-        }
-
-        Map<String, String> loginRequest = new HashMap<>();
-        loginRequest.put("email", email);
-        loginRequest.put("password", password);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(loginRequest), headers);
-
-        ResponseEntity<String> loginResponse = restTemplate.postForEntity(apiBaseUrl + "/customers/login", entity, String.class);
-        assertThat(loginResponse.getStatusCodeValue()).isEqualTo(200);
-
-        String responseBody = loginResponse.getBody();
-        assertThat(responseBody).isNotNull();
-        String token = com.jayway.jsonpath.JsonPath.read(responseBody, "$.token");
-        sharedData.put("customerToken", token); // Store customer token for authenticated cart operations
-        logger.info("Customer {} logged in for cart test. Token stored.", email);
     }
 
     private String resolveCartPathVariables(String path) {
